@@ -188,6 +188,16 @@ namespace CommandLineCalculator.Tests
             ).SetName("add"),
             new TestCaseData(
                 new TestConsole(
+                    (Read, "add"),
+                    (Read, "15"),
+                    (Read, "60"),
+                    (Write, "75"),
+                    (Read, "exit")
+                ),
+                new[] {1,2,3}
+            ).SetName("addMy"),
+            new TestCaseData(
+                new TestConsole(
                     (Read, "median"),
                     (Read, "3"),
                     (Read, "60"),

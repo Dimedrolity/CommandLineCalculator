@@ -15,7 +15,7 @@ namespace CommandLineCalculator
         private byte[] _storageBytes;
         private string StorageString => Encoding.UTF8.GetString(_storageBytes);
 
-        private string[] StorageCommands => StorageString.Split('\n')
+        private string[] StorageParts => StorageString.Split('\n')
             .Where(com => !string.IsNullOrEmpty(com)).ToArray();
 
         public override void Run(UserConsole userConsole, Storage storage)
@@ -26,7 +26,7 @@ namespace CommandLineCalculator
             {
                 if (!string.IsNullOrEmpty(StorageString))
                 {
-                    var commandName = StorageCommands[0];
+                    var commandName = StorageParts[0];
 
                     switch (commandName)
                     {
@@ -54,7 +54,9 @@ namespace CommandLineCalculator
                                 Add_New(userConsole);
                                 break;
                             case "median":
-                                Median(userConsole);
+                                _storage.Write(Encoding.UTF8.GetBytes("median\n"));
+                                _storageBytes = storage.Read();
+                                Median_New(userConsole);
                                 break;
                             case "help":
                                 Help(userConsole);
@@ -71,10 +73,6 @@ namespace CommandLineCalculator
             }
         }
 
-        private void Median_New(UserConsole userConsole)
-        {
-            throw new NotImplementedException();
-        }
 
         private long Random(UserConsole console, long x)
         {
@@ -95,26 +93,61 @@ namespace CommandLineCalculator
         {
             const int argumentsCountOfThisCommand = 2;
 
-            var args = StorageCommands.Skip(1).ToList();
+            var args = StorageParts.Skip(1).ToList();
 
             var needToReadCount = argumentsCountOfThisCommand - args.Count;
+            ReadFromConsoleNTimes(console, needToReadCount, args);
 
+            console.WriteLine(args.Sum(int.Parse).ToString(Culture)); //result
+            
+            ClearStorages();
+        }
+
+        private void ReadFromConsoleNTimes(UserConsole console, int needToReadCount, List<string> args)
+        {
             for (var i = 0; i < needToReadCount; i++)
             {
                 var value = ReadNumber(console);
                 args.Add(value.ToString());
                 RewriteToStorageWithValue(value);
             }
+        }
+
+        private void Median_New(UserConsole console)
+        {
+            var args = StorageParts.Skip(1).ToList();
+
+            int argumentsCountOfThisCommand;
+            if (args.Count != 0)
+            {
+                argumentsCountOfThisCommand = int.Parse(args.First());
+                args = args.Skip(1).ToList();
+            }
+            else
+            {
+                argumentsCountOfThisCommand = ReadNumber(console);
+                RewriteToStorageWithValue(argumentsCountOfThisCommand);
+            }
+            
+            var needToReadCount = argumentsCountOfThisCommand - args.Count;
+            ReadFromConsoleNTimes(console, needToReadCount, args);
 
 
-            console.WriteLine(args.Sum(int.Parse).ToString(Culture)); //result
+            var numbers = args.ConvertAll(int.Parse);
+            var result = CalculateMedian(numbers);
+            console.WriteLine(result.ToString(Culture));
+            
+            ClearStorages();
+        }
+
+        private void ClearStorages()
+        {
             _storage.Write(Array.Empty<byte>());
             _storageBytes = Array.Empty<byte>();
         }
 
         private void RewriteToStorageWithValue(int value)
         {
-            // StorageString
             var newStr = StorageString + $"{value}\n";
             _storage.Write(Encoding.UTF8.GetBytes(newStr));
             _storageBytes = _storage.Read();
@@ -139,6 +172,7 @@ namespace CommandLineCalculator
             var result = CalculateMedian(numbers);
             console.WriteLine(result.ToString(Culture));
         }
+
 
         private double CalculateMedian(List<int> numbers)
         {
