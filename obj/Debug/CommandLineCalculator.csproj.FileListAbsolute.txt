@@ -18,3 +18,13 @@ D:\Учёба\CommandLineCalculator.csproj (1)\obj\Debug\CommandLineCalculator.c
 D:\Учёба\CommandLineCalculator.csproj (1)\obj\Debug\CommandLineCalculator.csproj.CopyComplete
 D:\Учёба\CommandLineCalculator.csproj (1)\obj\Debug\CommandLineCalculator.dll
 D:\Учёба\CommandLineCalculator.csproj (1)\obj\Debug\CommandLineCalculator.pdb
+D:\Учёба\Тестовые на стажировку C# Контур\Калькулятор\CommandLineCalculator.csproj (1)\bin\Debug\CommandLineCalculator.dll
+D:\Учёба\Тестовые на стажировку C# Контур\Калькулятор\CommandLineCalculator.csproj (1)\bin\Debug\CommandLineCalculator.pdb
+D:\Учёба\Тестовые на стажировку C# Контур\Калькулятор\CommandLineCalculator.csproj (1)\bin\Debug\FluentAssertions.dll
+D:\Учёба\Тестовые на стажировку C# Контур\Калькулятор\CommandLineCalculator.csproj (1)\bin\Debug\nunit.framework.dll
+D:\Учёба\Тестовые на стажировку C# Контур\Калькулятор\CommandLineCalculator.csproj (1)\bin\Debug\FluentAssertions.xml
+D:\Учёба\Тестовые на стажировку C# Контур\Калькулятор\CommandLineCalculator.csproj (1)\bin\Debug\nunit.framework.xml
+D:\Учёба\Тестовые на стажировку C# Контур\Калькулятор\CommandLineCalculator.csproj (1)\obj\Debug\CommandLineCalculator.csprojAssemblyReference.cache
+D:\Учёба\Тестовые на стажировку C# Контур\Калькулятор\CommandLineCalculator.csproj (1)\obj\Debug\CommandLineCalculator.csproj.CopyComplete
+D:\Учёба\Тестовые на стажировку C# Контур\Калькулятор\CommandLineCalculator.csproj (1)\obj\Debug\CommandLineCalculator.dll
+D:\Учёба\Тестовые на стажировку C# Контур\Калькулятор\CommandLineCalculator.csproj (1)\obj\Debug\CommandLineCalculator.pdb

@@ -57,6 +57,14 @@ namespace CommandLineCalculator.Tests
                         (Read, "rand"),
                         (Read, "1"),
                         (Write, "420"),
+                        (Read, "exit")
+                    )
+                ).SetName("rand 1"),
+                new TestCaseData(
+                    new TestConsole(
+                        (Read, "rand"),
+                        (Read, "1"),
+                        (Write, "420"),
                         (Read, "rand"),
                         (Read, "2"),
                         (Write, "7058940"),
@@ -218,6 +226,17 @@ namespace CommandLineCalculator.Tests
                 ),
                 new[] {1}
             ).SetName("rand")
+            ,
+            new TestCaseData(
+                new TestConsole(
+                    (Read, "rand"),
+                    (Read, "2"),
+                    (Write, "420"),
+                    (Write, "7058940"),
+                    (Read, "exit")
+                ),
+                new[] {3}
+            ).SetName("myRand")
         };
 
 

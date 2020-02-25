@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
+using static System.Text.Encoding;
+using Convert = System.Convert;
 
 namespace CommandLineCalculator
 {
@@ -10,97 +11,76 @@ namespace CommandLineCalculator
     {
         private static CultureInfo Culture => CultureInfo.InvariantCulture;
 
+        private const long FirstRandomValue = 420L;
+
         private Storage _storage;
+        private byte[] StorageBytes => _storage.Read().ToArray();
 
-        private byte[] _storageBytes;
-        private string StorageString => Encoding.UTF8.GetString(_storageBytes);
+        private string[] StorageParts => UTF8.GetString(StorageBytes).Trim()
+            .Split('\n').Where(com => !string.IsNullOrEmpty(com)).ToArray();
 
-        private string[] StorageParts => StorageString.Split('\n')
-            .Where(com => !string.IsNullOrEmpty(com)).ToArray();
+        private string[] StoragePartsWoRand => UTF8.GetString(StorageBytes).Trim()
+            .Split('\n').Where(com => !string.IsNullOrEmpty(com)).Skip(1).ToArray();
+
+
+        private long CurrentRandomValue => Convert.ToInt64(StorageParts.FirstOrDefault());
 
         public override void Run(UserConsole userConsole, Storage storage)
         {
             _storage = storage;
-            _storageBytes = _storage.Read();
+            if (CurrentRandomValue == 0)
+            {
+                var randomValueBytes = UTF8.GetBytes(FirstRandomValue.ToString());
+                _storage.Write(randomValueBytes.Concat(UTF8.GetBytes("\n")).ToArray());
+            }
+
+            var x = CurrentRandomValue;
+
             while (true)
             {
-                if (!string.IsNullOrEmpty(StorageString))
-                {
-                    var commandName = StorageParts[0];
+                var commandName = StoragePartsWoRand == null || StoragePartsWoRand.Length == 0
+                    ? userConsole.ReadLine().Trim()
+                    : StoragePartsWoRand[0];
 
-                    switch (commandName)
-                    {
-                        case "add":
-                            Add_New(userConsole);
-                            break;
-                        case "median":
-                            Median_New(userConsole);
-                            break;
-                    }
-                }
-                else
+                switch (commandName)
                 {
-                    var x = 420L;
-                    while (true)
-                    {
-                        var input = userConsole.ReadLine();
-                        switch (input.Trim())
-                        {
-                            case "exit":
-                                return;
-                            case "add":
-                                _storage.Write(Encoding.UTF8.GetBytes("add\n"));
-                                _storageBytes = storage.Read();
-                                Add_New(userConsole);
-                                break;
-                            case "median":
-                                _storage.Write(Encoding.UTF8.GetBytes("median\n"));
-                                _storageBytes = storage.Read();
-                                Median_New(userConsole);
-                                break;
-                            case "help":
-                                Help(userConsole);
-                                break;
-                            case "rand":
-                                x = Random(userConsole, x);
-                                break;
-                            default:
-                                userConsole.WriteLine("Такой команды нет, используйте help для списка команд");
-                                break;
-                        }
-                    }
+                    case "exit":
+                        return;
+                    case "add":
+                        Add_New(userConsole);
+                        break;
+                    case "median":
+                        Median_New(userConsole);
+                        break;
+                    case "help":
+                        Help(userConsole);
+                        break;
+                    case "rand":
+                        x = Random_New(userConsole, x);
+                        break;
+                    default:
+                        userConsole.WriteLine("Такой команды нет, используйте help для списка команд");
+                        break;
                 }
             }
-        }
-
-
-        private long Random(UserConsole console, long x)
-        {
-            const int a = 16807;
-            const int m = 2147483647;
-
-            var count = ReadNumber(console);
-            for (var i = 0; i < count; i++)
-            {
-                console.WriteLine(x.ToString(Culture));
-                x = a * x % m;
-            }
-
-            return x;
         }
 
         private void Add_New(UserConsole console)
         {
+            if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
+                AddToStorage("add");
+
             const int argumentsCountOfThisCommand = 2;
 
-            var args = StorageParts.Skip(1).ToList();
+            var args = StoragePartsWoRand?.Skip(1).ToList();
 
             var needToReadCount = argumentsCountOfThisCommand - args.Count;
             ReadFromConsoleNTimes(console, needToReadCount, args);
 
-            console.WriteLine(args.Sum(int.Parse).ToString(Culture)); //result
-            
-            ClearStorages();
+            var numbers = args.ConvertAll(int.Parse);
+            console.WriteLine(numbers.Sum().ToString(Culture)); //result
+
+            ClearStorageAndWriteCurrentRandom();
         }
 
         private void ReadFromConsoleNTimes(UserConsole console, int needToReadCount, List<string> args)
@@ -109,13 +89,18 @@ namespace CommandLineCalculator
             {
                 var value = ReadNumber(console);
                 args.Add(value.ToString());
-                RewriteToStorageWithValue(value);
+                AddToStorage(value);
             }
         }
 
         private void Median_New(UserConsole console)
         {
-            var args = StorageParts.Skip(1).ToList();
+            if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
+            {
+                AddToStorage("median");
+            }
+
+            var args = StoragePartsWoRand.Skip(1).ToList();
 
             int argumentsCountOfThisCommand;
             if (args.Count != 0)
@@ -126,9 +111,9 @@ namespace CommandLineCalculator
             else
             {
                 argumentsCountOfThisCommand = ReadNumber(console);
-                RewriteToStorageWithValue(argumentsCountOfThisCommand);
+                AddToStorage(argumentsCountOfThisCommand);
             }
-            
+
             var needToReadCount = argumentsCountOfThisCommand - args.Count;
             ReadFromConsoleNTimes(console, needToReadCount, args);
 
@@ -136,43 +121,73 @@ namespace CommandLineCalculator
             var numbers = args.ConvertAll(int.Parse);
             var result = CalculateMedian(numbers);
             console.WriteLine(result.ToString(Culture));
-            
-            ClearStorages();
+
+            ClearStorageAndWriteCurrentRandom();
         }
 
-        private void ClearStorages()
+        private long Random_New(UserConsole console, long x)
         {
-            _storage.Write(Array.Empty<byte>());
-            _storageBytes = Array.Empty<byte>();
-        }
+            const int a = 16807;
+            const int m = 2147483647;
 
-        private void RewriteToStorageWithValue(int value)
-        {
-            var newStr = StorageString + $"{value}\n";
-            _storage.Write(Encoding.UTF8.GetBytes(newStr));
-            _storageBytes = _storage.Read();
-        }
-
-        private void Add(UserConsole console)
-        {
-            var a = ReadNumber(console);
-            var b = ReadNumber(console);
-            console.WriteLine((a + b).ToString(Culture));
-        }
-
-        private void Median(UserConsole console)
-        {
-            var count = ReadNumber(console);
-            var numbers = new List<int>();
-            for (var i = 0; i < count; i++)
+            if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
             {
-                numbers.Add(ReadNumber(console));
+                AddToStorage("rand");
             }
 
-            var result = CalculateMedian(numbers);
-            console.WriteLine(result.ToString(Culture));
+            var storageValues = StoragePartsWoRand.Skip(1).ToList();
+
+            int argumentsCountOfThisCommand;
+            if (storageValues.Count != 0)
+            {
+                argumentsCountOfThisCommand = int.Parse(storageValues.First());
+                storageValues = storageValues.Skip(1).ToList();
+            }
+            else
+            {
+                argumentsCountOfThisCommand = ReadNumber(console);
+                AddToStorage(argumentsCountOfThisCommand);
+            }
+
+            var restCountRandomValues = argumentsCountOfThisCommand - storageValues.Count;
+
+            for (var i = 0; i < restCountRandomValues; i++)
+            {
+                console.WriteLine(x.ToString(Culture));
+                AddToStorage(x);
+                x = a * x % m;
+                RewriteCurrentRandomValue(x);
+            }
+
+            ClearStorageAndWriteCurrentRandom();
+            return CurrentRandomValue;
         }
 
+        private void RewriteCurrentRandomValue(long newRandomValue)
+        {
+            var valueBytes = UTF8.GetBytes($"{newRandomValue}\n");
+            var rest = string.Join("\n", StoragePartsWoRand);
+            _storage.Write(valueBytes.Concat(UTF8.GetBytes(rest)).ToArray());
+        }
+
+        private void ClearStorageAndWriteCurrentRandom()
+        {
+            var current = CurrentRandomValue;
+            _storage.Write(Array.Empty<byte>());
+            _storage.Write(UTF8.GetBytes($"{current}\n"));
+        }
+
+        private void AddToStorage(string value)
+        {
+            var valueBytes = UTF8.GetBytes($"{value}\n");
+            _storage.Write(StorageBytes.Concat(valueBytes).ToArray());
+        }
+
+        private void AddToStorage(long value)
+        {
+            var valueBytes = UTF8.GetBytes($"{value}\n");
+            _storage.Write(StorageBytes.Concat(valueBytes).ToArray());
+        }
 
         private double CalculateMedian(List<int> numbers)
         {
