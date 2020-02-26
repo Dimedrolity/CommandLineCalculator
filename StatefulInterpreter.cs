@@ -28,6 +28,7 @@ namespace CommandLineCalculator
         public override void Run(UserConsole userConsole, Storage storage)
         {
             _storage = storage;
+            
             if (CurrentRandomValue == 0)
             {
                 var randomValueBytes = UTF8.GetBytes(FirstRandomValue.ToString());
@@ -47,16 +48,16 @@ namespace CommandLineCalculator
                     case "exit":
                         return;
                     case "add":
-                        Add_New(userConsole);
+                        Add(userConsole);
                         break;
                     case "median":
-                        Median_New(userConsole);
+                        Median(userConsole);
                         break;
                     case "help":
                         Help(userConsole);
                         break;
                     case "rand":
-                        x = Random_New(userConsole, x);
+                        x = Random(userConsole, x);
                         break;
                     default:
                         userConsole.WriteLine("Такой команды нет, используйте help для списка команд");
@@ -65,7 +66,7 @@ namespace CommandLineCalculator
             }
         }
 
-        private void Add_New(UserConsole console)
+        private void Add(UserConsole console)
         {
             if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
                 AddToStorage("add");
@@ -93,7 +94,7 @@ namespace CommandLineCalculator
             }
         }
 
-        private void Median_New(UserConsole console)
+        private void Median(UserConsole console)
         {
             if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
             {
@@ -125,7 +126,7 @@ namespace CommandLineCalculator
             ClearStorageAndWriteCurrentRandom();
         }
 
-        private long Random_New(UserConsole console, long x)
+        private long Random(UserConsole console, long x)
         {
             const int a = 16807;
             const int m = 2147483647;
@@ -166,7 +167,7 @@ namespace CommandLineCalculator
         private void RewriteCurrentRandomValue(long newRandomValue)
         {
             var valueBytes = UTF8.GetBytes($"{newRandomValue}\n");
-            var rest = string.Join("\n", StoragePartsWoRand);
+            var rest = string.Join("\n", StoragePartsWoRand)+"\n";
             _storage.Write(valueBytes.Concat(UTF8.GetBytes(rest)).ToArray());
         }
 
@@ -185,8 +186,10 @@ namespace CommandLineCalculator
 
         private void AddToStorage(long value)
         {
-            var valueBytes = UTF8.GetBytes($"{value}\n");
-            _storage.Write(StorageBytes.Concat(valueBytes).ToArray());
+            var valueBytes = UTF8.GetBytes($"{value}");
+            var nb = UTF8.GetBytes("\n");
+            var newVb = valueBytes.Concat(nb).ToArray();
+            _storage.Write(StorageBytes.Concat(newVb).ToArray());
         }
 
         private double CalculateMedian(List<int> numbers)

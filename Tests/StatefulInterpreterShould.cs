@@ -202,7 +202,7 @@ namespace CommandLineCalculator.Tests
                     (Write, "75"),
                     (Read, "exit")
                 ),
-                new[] {1,2,3}
+                new[] {1, 2, 3}
             ).SetName("addMy"),
             new TestCaseData(
                 new TestConsole(
@@ -225,8 +225,7 @@ namespace CommandLineCalculator.Tests
                     (Read, "exit")
                 ),
                 new[] {1}
-            ).SetName("rand")
-            ,
+            ).SetName("rand"),
             new TestCaseData(
                 new TestConsole(
                     (Read, "rand"),
@@ -235,8 +234,104 @@ namespace CommandLineCalculator.Tests
                     (Write, "7058940"),
                     (Read, "exit")
                 ),
-                new[] {3}
-            ).SetName("myRand")
+                new[] {4}
+            ).SetName("myRand"),
+            new TestCaseData(
+                new TestConsole(
+                    (Read, "rand"),
+                    (Read, "1"),
+                    (Write, "420"),
+                    (Read, "rand"),
+                    (Read, "2"),
+                    (Write, "7058940"),
+                    (Write, "528003995"),
+                    (Read, "rand"),
+                    (Read, "3"),
+                    (Write, "760714561"),
+                    (Write, "1359476136"),
+                    (Write, "1636897319"),
+                    (Read, "exit")
+                ),
+                new[] {1, 7}
+            ).SetName("my rand x3"),
+            new TestCaseData(
+                new TestConsole(
+                    (Read, "rand"),
+                    (Read, "3"),
+                    (Write, "420"),
+                    (Write, "7058940"),
+                    (Write, "528003995"),
+                    (Read, "median"),
+                    (Read, "3"),
+                    (Read, "60"),
+                    (Read, "50"),
+                    (Read, "41"),
+                    (Write, "50"),
+                    (Read, "rand"),
+                    (Read, "3"),
+                    (Write, "760714561"),
+                    (Write, "1359476136"),
+                    (Write, "1636897319"),
+                    (Read, "exit")
+                ),
+                new[] {4}
+            ).SetName("my rand median rand break 4"),
+            new TestCaseData(
+                new TestConsole(
+                    (Read, "rand"),
+                    (Read, "3"),
+                    (Write, "420"),
+                    (Write, "7058940"),
+                    (Write, "528003995"),
+                    (Read, "median"),
+                    (Read, "3"),
+                    (Read, "60"),
+                    (Read, "50"),
+                    (Read, "41"),
+                    (Write, "50"),
+                    (Read, "rand"),
+                    (Read, "3"),
+                    (Write, "760714561"),
+                    (Write, "1359476136"),
+                    (Write, "1636897319"),
+                    (Read, "exit")
+                ),
+                new[] {4, 5}
+            ).SetName("my rand median rand"),
+            new TestCaseData(
+                new TestConsole(
+                    (Read, "rand"),
+                    (Read, "2"),
+                    (Write, "420"),
+                    (Write, "7058940"),
+                    (Read, "add"),
+                    (Read, "2"),
+                    (Read, "3"),
+                    (Write, "5"),
+                    (Read, "rand"),
+                    (Read, "2"),
+                    (Write, "528003995"),
+                    (Write, "760714561"),
+                    (Read, "rand"),
+                    (Read, "2"),
+                    (Write, "1359476136"),
+                    (Write, "1636897319"),
+                    
+                    (Read, "help"),
+                    (Write, "Укажите команду, для которой хотите посмотреть помощь"),
+                    (Write, "Доступные команды: add, median, rand"),
+                    (Write, "Чтобы выйти из режима помощи введите end"),
+                    (Read, "end"),
+                    
+                    
+                    (Read, "add"),
+                    (Read, "2"),
+                    (Read, "3"),
+                    (Write, "5"),
+                    (Read, "exit")
+                ),
+                new[] {13}
+            ).SetName("my rand x3 and add")
         };
 
 
