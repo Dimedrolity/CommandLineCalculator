@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using static System.Text.Encoding;
-using System;
 
 namespace CommandLineCalculator
 {
@@ -13,40 +12,38 @@ namespace CommandLineCalculator
 
         private const long FirstRandomValue = 420L;
 
-        private Storage _storage;
-        private byte[] StorageBytes => _storage.Read().ToArray();
+        private Storage storage;
+        private byte[] StorageBytes => storage.Read().ToArray();
 
-        private string[] StorageParts => UTF8.GetString(StorageBytes).Trim()
-            .Split('\n').Where(com => !string.IsNullOrEmpty(com)).ToArray();
+        private bool IsStorageEmpty => StorageBytes == null || StorageBytes.Length == 0;
 
-        private string[] StoragePartsWoRand => UTF8.GetString(StorageBytes).Trim()
-            .Split('\n').Where(com => !string.IsNullOrEmpty(com)).Skip(1).ToArray();
+        private IEnumerable<string> StorageLines => UTF8.GetString(StorageBytes).Trim()
+            .Split('\n').Where(com => !string.IsNullOrEmpty(com));
 
+        private string[] StoragePartsWithoutRandomValue => StorageLines.Skip(1).ToArray();
 
-        private long CurrentRandomValue => System.Convert.ToInt64(StorageParts.FirstOrDefault());
+        private long CurrentRandomValue => System.Convert.ToInt64(StorageLines.FirstOrDefault());
 
         public override void Run(UserConsole userConsole, Storage storage)
         {
-            _storage = storage;
+            this.storage = storage;
 
-            if (CurrentRandomValue == 0)
+            if (IsStorageEmpty)
             {
-                var randomValueBytes = UTF8.GetBytes(FirstRandomValue.ToString());
-                _storage.Write(randomValueBytes.Concat(UTF8.GetBytes("\n")).ToArray());
+                AddToStorage(FirstRandomValue);
             }
-
 
             while (true)
             {
-                var commandName = StoragePartsWoRand == null || StoragePartsWoRand.Length == 0
+                var commandName = StoragePartsWithoutRandomValue == null || StoragePartsWithoutRandomValue.Length == 0
                     ? userConsole.ReadLine().Trim()
-                    : StoragePartsWoRand[0];
+                    : StoragePartsWithoutRandomValue[0];
 
-                if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
+                if (StoragePartsWithoutRandomValue == null || StoragePartsWithoutRandomValue.Length == 0)
                 {
                     AddToStorage(commandName);
                 }
-                
+
                 switch (commandName)
                 {
                     case "exit":
@@ -73,12 +70,9 @@ namespace CommandLineCalculator
 
         private void Add(UserConsole console)
         {
-            // if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
-            //     AddToStorage("add");
-
             const int argumentsCountOfThisCommand = 2;
 
-            var args = StoragePartsWoRand?.Skip(1).ToList();
+            var args = StoragePartsWithoutRandomValue?.Skip(1).ToList();
 
             var needToReadCount = argumentsCountOfThisCommand - args.Count;
             ReadFromConsoleNTimes(console, needToReadCount, args);
@@ -101,12 +95,7 @@ namespace CommandLineCalculator
 
         private void Median(UserConsole console)
         {
-
-            // if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
-            // {
-            //     AddToStorage("median");
-            // }
-            var args = StoragePartsWoRand.Skip(1).ToList();
+            var args = StoragePartsWithoutRandomValue.Skip(1).ToList();
 
             int argumentsCountOfThisCommand;
             if (args.Count != 0)
@@ -136,12 +125,7 @@ namespace CommandLineCalculator
             const int a = 16807;
             const int m = 2147483647;
 
-            // if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
-            // {
-            //     AddToStorage("rand");
-            // }
-
-            var storageValues = StoragePartsWoRand.Skip(1).ToList();
+            var storageValues = StoragePartsWithoutRandomValue.Skip(1).ToList();
 
             int argumentsCountOfThisCommand;
             if (storageValues.Count != 0)
@@ -171,21 +155,21 @@ namespace CommandLineCalculator
         private void RewriteCurrentRandomValue(long newRandomValue)
         {
             var valueBytes = UTF8.GetBytes($"{newRandomValue}\n");
-            var rest = string.Join("\n", StoragePartsWoRand) + "\n";
-            _storage.Write(valueBytes.Concat(UTF8.GetBytes(rest)).ToArray());
+            var rest = string.Join("\n", StoragePartsWithoutRandomValue) + "\n";
+            storage.Write(valueBytes.Concat(UTF8.GetBytes(rest)).ToArray());
         }
 
         private void ClearStorageAndWriteCurrentRandom()
         {
             var current = CurrentRandomValue;
-            _storage.Write(Array.Empty<byte>());
-            _storage.Write(UTF8.GetBytes($"{current}\n"));
+            storage.Write(Array.Empty<byte>());
+            storage.Write(UTF8.GetBytes($"{current}\n"));
         }
 
         private void AddToStorage(string value)
         {
             var valueBytes = UTF8.GetBytes($"{value}\n");
-            _storage.Write(StorageBytes.Concat(valueBytes).ToArray());
+            storage.Write(StorageBytes.Concat(valueBytes).ToArray());
         }
 
         private void AddToStorage(long value)
@@ -193,7 +177,7 @@ namespace CommandLineCalculator
             var valueBytes = UTF8.GetBytes($"{value}");
             var nb = UTF8.GetBytes("\n");
             var newVb = valueBytes.Concat(nb).ToArray();
-            _storage.Write(StorageBytes.Concat(newVb).ToArray());
+            storage.Write(StorageBytes.Concat(newVb).ToArray());
         }
 
         private double CalculateMedian(List<int> numbers)
@@ -214,13 +198,7 @@ namespace CommandLineCalculator
             const string exitMessage = "Чтобы выйти из режима помощи введите end";
             const string commands = "Доступные команды: add, median, rand";
 
-            //если стораж пуст, добавить туда help
-            // if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
-            // {
-            //     AddToStorage("help");
-            // }
-
-            var storageValues = StoragePartsWoRand.Skip(1).ToList();
+            var storageValues = StoragePartsWithoutRandomValue.Skip(1).ToList();
 
             string message;
 
@@ -234,7 +212,7 @@ namespace CommandLineCalculator
                 console.WriteLine(message);
                 AddToStorage(message);
             }
-            
+
             if (storageValues.Count != 0)
             {
                 storageValues = storageValues.Skip(1).ToList();
@@ -260,7 +238,7 @@ namespace CommandLineCalculator
             while (true)
             {
                 string command;
-                
+
                 if (storageValues.Count != 0)
                 {
                     command = storageValues.First();
@@ -271,15 +249,14 @@ namespace CommandLineCalculator
                     command = console.ReadLine().Trim();
                     AddToStorage(command);
                 }
-                
-                
+
                 switch (command)
                 {
                     case "end":
                         ClearStorageAndWriteCurrentRandom();
                         return;
                     case "add":
-            
+
                         if (storageValues.Count != 0)
                         {
                             storageValues = storageValues.Skip(1).ToList();
@@ -301,6 +278,7 @@ namespace CommandLineCalculator
                             console.WriteLine(message);
                             AddToStorage(message);
                         }
+
                         break;
                     case "median":
                         if (storageValues.Count != 0)
@@ -324,6 +302,7 @@ namespace CommandLineCalculator
                             console.WriteLine(message);
                             AddToStorage(message);
                         }
+
                         break;
                     case "rand":
                         if (storageValues.Count != 0)
@@ -347,6 +326,7 @@ namespace CommandLineCalculator
                             console.WriteLine(message);
                             AddToStorage(message);
                         }
+
                         break;
                     default:
                         if (storageValues.Count != 0)
@@ -370,7 +350,7 @@ namespace CommandLineCalculator
                             console.WriteLine(message);
                             AddToStorage(message);
                         }
-                        
+
                         if (storageValues.Count != 0)
                         {
                             storageValues = storageValues.Skip(1).ToList();
@@ -381,6 +361,7 @@ namespace CommandLineCalculator
                             console.WriteLine(message);
                             AddToStorage(message);
                         }
+
                         break;
                 }
             }
