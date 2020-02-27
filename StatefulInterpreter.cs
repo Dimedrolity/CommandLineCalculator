@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using static System.Text.Encoding;
-using Convert = System.Convert;
+using System;
 
 namespace CommandLineCalculator
 {
@@ -23,19 +23,18 @@ namespace CommandLineCalculator
             .Split('\n').Where(com => !string.IsNullOrEmpty(com)).Skip(1).ToArray();
 
 
-        private long CurrentRandomValue => Convert.ToInt64(StorageParts.FirstOrDefault());
+        private long CurrentRandomValue => System.Convert.ToInt64(StorageParts.FirstOrDefault());
 
         public override void Run(UserConsole userConsole, Storage storage)
         {
             _storage = storage;
-            
+
             if (CurrentRandomValue == 0)
             {
                 var randomValueBytes = UTF8.GetBytes(FirstRandomValue.ToString());
                 _storage.Write(randomValueBytes.Concat(UTF8.GetBytes("\n")).ToArray());
             }
 
-            var x = CurrentRandomValue;
 
             while (true)
             {
@@ -43,6 +42,11 @@ namespace CommandLineCalculator
                     ? userConsole.ReadLine().Trim()
                     : StoragePartsWoRand[0];
 
+                if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
+                {
+                    AddToStorage(commandName);
+                }
+                
                 switch (commandName)
                 {
                     case "exit":
@@ -57,10 +61,11 @@ namespace CommandLineCalculator
                         Help(userConsole);
                         break;
                     case "rand":
-                        x = Random(userConsole, x);
+                        Random(userConsole, CurrentRandomValue);
                         break;
                     default:
                         userConsole.WriteLine("Такой команды нет, используйте help для списка команд");
+                        ClearStorageAndWriteCurrentRandom();
                         break;
                 }
             }
@@ -68,8 +73,8 @@ namespace CommandLineCalculator
 
         private void Add(UserConsole console)
         {
-            if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
-                AddToStorage("add");
+            // if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
+            //     AddToStorage("add");
 
             const int argumentsCountOfThisCommand = 2;
 
@@ -96,11 +101,11 @@ namespace CommandLineCalculator
 
         private void Median(UserConsole console)
         {
-            if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
-            {
-                AddToStorage("median");
-            }
 
+            // if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
+            // {
+            //     AddToStorage("median");
+            // }
             var args = StoragePartsWoRand.Skip(1).ToList();
 
             int argumentsCountOfThisCommand;
@@ -126,15 +131,15 @@ namespace CommandLineCalculator
             ClearStorageAndWriteCurrentRandom();
         }
 
-        private long Random(UserConsole console, long x)
+        private void Random(UserConsole console, long x)
         {
             const int a = 16807;
             const int m = 2147483647;
 
-            if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
-            {
-                AddToStorage("rand");
-            }
+            // if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
+            // {
+            //     AddToStorage("rand");
+            // }
 
             var storageValues = StoragePartsWoRand.Skip(1).ToList();
 
@@ -161,13 +166,12 @@ namespace CommandLineCalculator
             }
 
             ClearStorageAndWriteCurrentRandom();
-            return CurrentRandomValue;
         }
 
         private void RewriteCurrentRandomValue(long newRandomValue)
         {
             var valueBytes = UTF8.GetBytes($"{newRandomValue}\n");
-            var rest = string.Join("\n", StoragePartsWoRand)+"\n";
+            var rest = string.Join("\n", StoragePartsWoRand) + "\n";
             _storage.Write(valueBytes.Concat(UTF8.GetBytes(rest)).ToArray());
         }
 
@@ -205,37 +209,178 @@ namespace CommandLineCalculator
             return (numbers[count / 2 - 1] + numbers[count / 2]) / 2.0;
         }
 
-        private static void Help(UserConsole console)
+        private void Help(UserConsole console)
         {
             const string exitMessage = "Чтобы выйти из режима помощи введите end";
             const string commands = "Доступные команды: add, median, rand";
 
-            console.WriteLine("Укажите команду, для которой хотите посмотреть помощь");
-            console.WriteLine(commands);
-            console.WriteLine(exitMessage);
+            //если стораж пуст, добавить туда help
+            // if (StoragePartsWoRand == null || StoragePartsWoRand.Length == 0)
+            // {
+            //     AddToStorage("help");
+            // }
+
+            var storageValues = StoragePartsWoRand.Skip(1).ToList();
+
+            string message;
+
+            if (storageValues.Count != 0)
+            {
+                storageValues = storageValues.Skip(1).ToList();
+            }
+            else
+            {
+                message = "Укажите команду, для которой хотите посмотреть помощь";
+                console.WriteLine(message);
+                AddToStorage(message);
+            }
+            
+            if (storageValues.Count != 0)
+            {
+                storageValues = storageValues.Skip(1).ToList();
+            }
+            else
+            {
+                message = commands;
+                console.WriteLine(message);
+                AddToStorage(message);
+            }
+
+            if (storageValues.Count != 0)
+            {
+                storageValues = storageValues.Skip(1).ToList();
+            }
+            else
+            {
+                message = exitMessage;
+                console.WriteLine(message);
+                AddToStorage(message);
+            }
+
             while (true)
             {
-                var command = console.ReadLine();
-                switch (command.Trim())
+                string command;
+                
+                if (storageValues.Count != 0)
+                {
+                    command = storageValues.First();
+                    storageValues = storageValues.Skip(1).ToList();
+                }
+                else
+                {
+                    command = console.ReadLine().Trim();
+                    AddToStorage(command);
+                }
+                
+                
+                switch (command)
                 {
                     case "end":
+                        ClearStorageAndWriteCurrentRandom();
                         return;
                     case "add":
-                        console.WriteLine("Вычисляет сумму двух чисел");
-                        console.WriteLine(exitMessage);
+            
+                        if (storageValues.Count != 0)
+                        {
+                            storageValues = storageValues.Skip(1).ToList();
+                        }
+                        else
+                        {
+                            message = "Вычисляет сумму двух чисел";
+                            console.WriteLine(message);
+                            AddToStorage(message);
+                        }
+
+                        if (storageValues.Count != 0)
+                        {
+                            storageValues = storageValues.Skip(1).ToList();
+                        }
+                        else
+                        {
+                            message = exitMessage;
+                            console.WriteLine(message);
+                            AddToStorage(message);
+                        }
                         break;
                     case "median":
-                        console.WriteLine("Вычисляет медиану списка чисел");
-                        console.WriteLine(exitMessage);
+                        if (storageValues.Count != 0)
+                        {
+                            storageValues = storageValues.Skip(1).ToList();
+                        }
+                        else
+                        {
+                            message = "Вычисляет медиану списка чисел";
+                            console.WriteLine(message);
+                            AddToStorage(message);
+                        }
+
+                        if (storageValues.Count != 0)
+                        {
+                            storageValues = storageValues.Skip(1).ToList();
+                        }
+                        else
+                        {
+                            message = exitMessage;
+                            console.WriteLine(message);
+                            AddToStorage(message);
+                        }
                         break;
                     case "rand":
-                        console.WriteLine("Генерирует список случайных чисел");
-                        console.WriteLine(exitMessage);
+                        if (storageValues.Count != 0)
+                        {
+                            storageValues = storageValues.Skip(1).ToList();
+                        }
+                        else
+                        {
+                            message = "Генерирует список случайных чисел";
+                            console.WriteLine(message);
+                            AddToStorage(message);
+                        }
+
+                        if (storageValues.Count != 0)
+                        {
+                            storageValues = storageValues.Skip(1).ToList();
+                        }
+                        else
+                        {
+                            message = exitMessage;
+                            console.WriteLine(message);
+                            AddToStorage(message);
+                        }
                         break;
                     default:
-                        console.WriteLine("Такой команды нет");
-                        console.WriteLine(commands);
-                        console.WriteLine(exitMessage);
+                        if (storageValues.Count != 0)
+                        {
+                            storageValues = storageValues.Skip(1).ToList();
+                        }
+                        else
+                        {
+                            message = "Такой команды нет";
+                            console.WriteLine(message);
+                            AddToStorage(message);
+                        }
+
+                        if (storageValues.Count != 0)
+                        {
+                            storageValues = storageValues.Skip(1).ToList();
+                        }
+                        else
+                        {
+                            message = commands;
+                            console.WriteLine(message);
+                            AddToStorage(message);
+                        }
+                        
+                        if (storageValues.Count != 0)
+                        {
+                            storageValues = storageValues.Skip(1).ToList();
+                        }
+                        else
+                        {
+                            message = exitMessage;
+                            console.WriteLine(message);
+                            AddToStorage(message);
+                        }
                         break;
                 }
             }

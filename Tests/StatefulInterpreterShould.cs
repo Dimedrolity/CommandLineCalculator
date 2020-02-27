@@ -192,7 +192,7 @@ namespace CommandLineCalculator.Tests
                     (Write, "75"),
                     (Read, "exit")
                 ),
-                new[] {2}
+                new[] {0, 2, 4, 6, 8}
             ).SetName("add"),
             new TestCaseData(
                 new TestConsole(
@@ -202,7 +202,7 @@ namespace CommandLineCalculator.Tests
                     (Write, "75"),
                     (Read, "exit")
                 ),
-                new[] {1, 2, 3}
+                new[] {0, 2, 4, 6, 8}
             ).SetName("addMy"),
             new TestCaseData(
                 new TestConsole(
@@ -214,7 +214,7 @@ namespace CommandLineCalculator.Tests
                     (Write, "50"),
                     (Read, "exit")
                 ),
-                new[] {1, 4}
+                new[] {0, 2, 4, 6, 8, 10}
             ).SetName("median"),
             new TestCaseData(
                 new TestConsole(
@@ -224,7 +224,7 @@ namespace CommandLineCalculator.Tests
                     (Write, "7058940"),
                     (Read, "exit")
                 ),
-                new[] {1}
+                new[] {0, 2, 4, 6, 8}
             ).SetName("rand"),
             new TestCaseData(
                 new TestConsole(
@@ -234,7 +234,7 @@ namespace CommandLineCalculator.Tests
                     (Write, "7058940"),
                     (Read, "exit")
                 ),
-                new[] {4}
+                new[] {0, 2, 4, 6, 8}
             ).SetName("myRand"),
             new TestCaseData(
                 new TestConsole(
@@ -252,7 +252,7 @@ namespace CommandLineCalculator.Tests
                     (Write, "1636897319"),
                     (Read, "exit")
                 ),
-                new[] {1, 7}
+                new[] {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24}
             ).SetName("my rand x3"),
             new TestCaseData(
                 new TestConsole(
@@ -274,7 +274,7 @@ namespace CommandLineCalculator.Tests
                     (Write, "1636897319"),
                     (Read, "exit")
                 ),
-                new[] {4}
+                new[] {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32}
             ).SetName("my rand median rand break 4"),
             new TestCaseData(
                 new TestConsole(
@@ -296,7 +296,7 @@ namespace CommandLineCalculator.Tests
                     (Write, "1636897319"),
                     (Read, "exit")
                 ),
-                new[] {4, 5}
+                new[] {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32}
             ).SetName("my rand median rand"),
             new TestCaseData(
                 new TestConsole(
@@ -316,22 +316,118 @@ namespace CommandLineCalculator.Tests
                     (Read, "2"),
                     (Write, "1359476136"),
                     (Write, "1636897319"),
-                    
                     (Read, "help"),
                     (Write, "Укажите команду, для которой хотите посмотреть помощь"),
                     (Write, "Доступные команды: add, median, rand"),
                     (Write, "Чтобы выйти из режима помощи введите end"),
                     (Read, "end"),
-                    
-                    
                     (Read, "add"),
                     (Read, "2"),
                     (Read, "3"),
                     (Write, "5"),
                     (Read, "exit")
                 ),
-                new[] {13}
-            ).SetName("my rand x3 and add")
+                new[] {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34}
+            ).SetName("my randx3 help add"),
+            new TestCaseData(
+                new TestConsole(
+                    (Read, "rand"),
+                    (Read, "6"),
+                    (Write, "420"),
+                    (Write, "7058940"),
+                    (Write, "528003995"),
+                    (Write, "760714561"),
+                    (Write, "1359476136"),
+                    (Write, "1636897319"),
+                    (Read, "exit")
+                ),
+                new[] {0, 2, 4, 6, 8, 10, 12, 14, 16}
+            ).SetName("only rand"),
+            new TestCaseData(
+                new TestConsole(
+                    (Read, "help"),
+                    (Write, "Укажите команду, для которой хотите посмотреть помощь"),
+                    (Write, "Доступные команды: add, median, rand"),
+                    (Write, "Чтобы выйти из режима помощи введите end"),
+                    (Read, "end"),
+                    (Read, "exit")
+                ),
+                new[] {0, 2, 4}
+            ).SetName("tupo help end"),
+            new TestCaseData(
+                new TestConsole(
+                    (Read, "help"),
+                    (Write, "Укажите команду, для которой хотите посмотреть помощь"),
+                    (Write, "Доступные команды: add, median, rand"),
+                    (Write, "Чтобы выйти из режима помощи введите end"),
+                    (Read, "add"),
+                    (Write, "Вычисляет сумму двух чисел"),
+                    (Write, "Чтобы выйти из режима помощи введите end"),
+                    (Read, "end"),
+                    (Read, "exit")
+                ),
+                new[] {0, 2, 4, 6, 8, 10, 12, 14, 16}
+            ).SetName("help add break"),
+            new TestCaseData(
+                new TestConsole(
+                    (Read, "help"),
+                    (Write, "Укажите команду, для которой хотите посмотреть помощь"),
+                    (Write, "Доступные команды: add, median, rand"),
+                    (Write, "Чтобы выйти из режима помощи введите end"),
+                    (Read, "median"),
+                    (Write, "Вычисляет медиану списка чисел"),
+                    (Write, "Чтобы выйти из режима помощи введите end"),
+                    (Read, "end"),
+                    (Read, "exit")
+                ),
+                new[] {0, 2, 4, 6, 8, 10, 12, 14, 16}
+            ).SetName("help median break"),
+            new TestCaseData(
+                new TestConsole(
+                    (Read, "help"),
+                    (Write, "Укажите команду, для которой хотите посмотреть помощь"),
+                    (Write, "Доступные команды: add, median, rand"),
+                    (Write, "Чтобы выйти из режима помощи введите end"),
+                    (Read, "azazaza"),
+                    (Write, "Такой команды нет"),
+                    (Write, "Доступные команды: add, median, rand"),
+                    (Write, "Чтобы выйти из режима помощи введите end"),
+                    (Read, "end"),
+                    (Read, "exit")
+                ),
+                new[] {0, 2, 4, 6, 8, 10, 12, 14, 16, 18,}
+            ).SetName("help azaza break"),
+            new TestCaseData(
+                new TestConsole(
+                    (Read, "help"),
+                    (Write, "Укажите команду, для которой хотите посмотреть помощь"),
+                    (Write, "Доступные команды: add, median, rand"),
+                    (Write, "Чтобы выйти из режима помощи введите end"),
+                    (Read, "rand"),
+                    (Write, "Генерирует список случайных чисел"),
+                    (Write, "Чтобы выйти из режима помощи введите end"),
+                    (Read, "end"),
+                    (Read, "exit")
+                ),
+                new[] {0, 2, 4, 6, 8, 10, 12, 14, 16}
+            ).SetName("help rand break"),
+            new TestCaseData(
+                new TestConsole(
+                    (Read, "median"),
+                    (Read, "0"),
+                    (Write, "0"),
+                    (Read, "exit")
+                ),
+                new[] {0, 2, 4, 6}
+            ).SetName("my median 0"),
+            new TestCaseData(
+                new TestConsole(
+                    (Read, "ramd"),
+                    (Write, "Такой команды нет, используйте help для списка команд"),
+                    (Read, "exit")
+                ),
+                new[] {0, 2, 4,}
+            ).SetName("unknown command")
         };
 
 
