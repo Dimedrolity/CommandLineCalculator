@@ -11,39 +11,26 @@ namespace CommandLineCalculator
         private static CultureInfo Culture => CultureInfo.InvariantCulture;
 
         private UserConsole _userConsole;
-        
+
         private Storage _storage;
         private byte[] StorageBytes => _storage.Read();
-        private bool IsStorageEmpty => StorageBytes == null || StorageBytes.Length == 0;
 
         private IEnumerable<string> StorageLines => UTF8.GetString(StorageBytes).Trim()
             .Split('\n').Where(com => !string.IsNullOrEmpty(com));
 
         private long NextRandomValue => System.Convert.ToInt64(StorageLines.First());
-        
-        private IEnumerable<string> StorageLinesExceptRandomValue => StorageLines.Skip(1);
+        private IEnumerable<string> CurrentCommandLines => StorageLines.Skip(1);
 
         public override void Run(UserConsole userConsole, Storage storage)
         {
             _storage = storage;
             _userConsole = userConsole;
-            
-            if (IsStorageEmpty)
-            {
-                const long firstRandomValue = 420L;
-                AddToStorage(firstRandomValue);
-            }
+
+            InitializeStorageIfEmpty();
 
             while (true)
             {
-                var commandName = StorageLinesExceptRandomValue == null || !StorageLinesExceptRandomValue.Any()
-                    ? _userConsole.ReadLine().Trim()
-                    : StorageLinesExceptRandomValue.First();
-
-                if (StorageLinesExceptRandomValue == null || !StorageLinesExceptRandomValue.Any())
-                {
-                    AddToStorage(commandName);
-                }
+                var commandName = GetCurrentCommandName();
 
                 switch (commandName)
                 {
@@ -63,9 +50,35 @@ namespace CommandLineCalculator
                         break;
                     default:
                         _userConsole.WriteLine("Такой команды нет, используйте help для списка команд");
-                        ClearStorageAndWriteCurrentRandom();
                         break;
                 }
+
+                ClearStorageAndWriteCurrentRandom();
+            }
+        }
+
+        private string GetCurrentCommandName()
+        {
+            string commandName;
+            if (CurrentCommandLines.Any())
+            {
+                commandName = CurrentCommandLines.First();
+            }
+            else
+            {
+                commandName = _userConsole.ReadLine().Trim();
+                AddToStorage(commandName);
+            }
+
+            return commandName;
+        }
+
+        private void InitializeStorageIfEmpty()
+        {
+            if (StorageBytes == null || StorageBytes.Length == 0)
+            {
+                const long firstRandomValue = 420L;
+                AddToStorage(firstRandomValue);
             }
         }
 
@@ -73,15 +86,13 @@ namespace CommandLineCalculator
         {
             const int argumentsCountOfThisCommand = 2;
 
-            var args = StorageLinesExceptRandomValue?.Skip(1).ToList();
+            var args = CurrentCommandLines?.Skip(1).ToList();
 
             var needToReadCount = argumentsCountOfThisCommand - args.Count;
             ReadFromConsoleNTimes(needToReadCount, args);
 
             var numbers = args.ConvertAll(int.Parse);
-            _userConsole.WriteLine(numbers.Sum().ToString(Culture)); 
-
-            ClearStorageAndWriteCurrentRandom();
+            _userConsole.WriteLine(numbers.Sum().ToString(Culture));
         }
 
         private void ReadFromConsoleNTimes(int needToReadCount, List<string> args)
@@ -96,7 +107,7 @@ namespace CommandLineCalculator
 
         private void Median()
         {
-            var medianArgumentsFromStorage = StorageLinesExceptRandomValue.Skip(1).ToList();
+            var medianArgumentsFromStorage = CurrentCommandLines.Skip(1).ToList();
 
             int totalCountOfArguments;
             if (medianArgumentsFromStorage.Count != 0)
@@ -117,8 +128,6 @@ namespace CommandLineCalculator
             var numbers = medianArgumentsFromStorage.ConvertAll(int.Parse);
             var result = CalculateMedian(numbers);
             _userConsole.WriteLine(result.ToString(Culture));
-
-            ClearStorageAndWriteCurrentRandom();
         }
 
         private void Random()
@@ -126,7 +135,7 @@ namespace CommandLineCalculator
             const int a = 16807;
             const int m = 2147483647;
 
-            var storageValues = StorageLinesExceptRandomValue.Skip(1).ToList();
+            var storageValues = CurrentCommandLines.Skip(1).ToList();
 
             int argumentsCountOfThisCommand;
             if (storageValues.Count != 0)
@@ -143,7 +152,7 @@ namespace CommandLineCalculator
             var restCountRandomValues = argumentsCountOfThisCommand - storageValues.Count;
 
             var x = NextRandomValue;
-            
+
             for (var i = 0; i < restCountRandomValues; i++)
             {
                 _userConsole.WriteLine(x.ToString(Culture));
@@ -151,14 +160,12 @@ namespace CommandLineCalculator
                 x = a * x % m;
                 RewriteCurrentRandomValue(x);
             }
-
-            ClearStorageAndWriteCurrentRandom();
         }
 
         private void RewriteCurrentRandomValue(long newRandomValue)
         {
             var valueBytes = UTF8.GetBytes($"{newRandomValue}\n");
-            var rest = string.Join("\n", StorageLinesExceptRandomValue) + "\n";
+            var rest = string.Join("\n", CurrentCommandLines) + "\n";
             _storage.Write(valueBytes.Concat(UTF8.GetBytes(rest)).ToArray());
         }
 
@@ -198,7 +205,7 @@ namespace CommandLineCalculator
             const string exitMessage = "Чтобы выйти из режима помощи введите end";
             const string commands = "Доступные команды: add, median, rand";
 
-            var storageValues = StorageLinesExceptRandomValue.Skip(1).ToList();
+            var storageValues = CurrentCommandLines.Skip(1).ToList();
 
             string message;
 
@@ -253,7 +260,6 @@ namespace CommandLineCalculator
                 switch (command)
                 {
                     case "end":
-                        ClearStorageAndWriteCurrentRandom();
                         return;
                     case "add":
 
