@@ -151,6 +151,7 @@ namespace CommandLineCalculator
                 var currentRandomValue = NextRandomValue;
                 _userConsole.WriteLine(currentRandomValue.ToString(Culture));
                 AddToStorage(currentRandomValue);
+                
                 ChangeCurrentRandomValueFor(a * currentRandomValue % m);
             }
         }
@@ -199,7 +200,7 @@ namespace CommandLineCalculator
             const string commands = "Доступные команды: add, median, rand";
 
             var helpLinesFromStorage = CurrentCommandLines.Skip(1).ToList();
-            
+
             WriteMessageIfWasNotWritten("Укажите команду, для которой хотите посмотреть помощь");
             WriteMessageIfWasNotWritten(commands);
             WriteMessageIfWasNotWritten(exitMessage);
