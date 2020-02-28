@@ -42,11 +42,11 @@ namespace CommandLineCalculator
                     case "median":
                         Median();
                         break;
-                    case "help":
-                        Help();
-                        break;
                     case "rand":
                         Random();
+                        break;
+                    case "help":
+                        Help();
                         break;
                     default:
                         _userConsole.WriteLine("Такой команды нет, используйте help для списка команд");
@@ -54,6 +54,15 @@ namespace CommandLineCalculator
                 }
 
                 ClearStorageAndWriteCurrentRandom();
+            }
+        }
+
+        private void InitializeStorageIfEmpty()
+        {
+            if (StorageBytes == null || StorageBytes.Length == 0)
+            {
+                const long firstRandomValue = 420L;
+                AddToStorage(firstRandomValue);
             }
         }
 
@@ -73,59 +82,50 @@ namespace CommandLineCalculator
             return commandName;
         }
 
-        private void InitializeStorageIfEmpty()
-        {
-            if (StorageBytes == null || StorageBytes.Length == 0)
-            {
-                const long firstRandomValue = 420L;
-                AddToStorage(firstRandomValue);
-            }
-        }
-
         private void Add()
         {
-            const int argumentsCountOfThisCommand = 2;
+            const int totalCountOfArguments = 2;
+            var argumentsAtStart = CurrentCommandLines.Skip(1).ToList();
+            var remainingCountOfArguments = totalCountOfArguments - argumentsAtStart.Count;
 
-            var args = CurrentCommandLines?.Skip(1).ToList();
+            ReadFromConsoleAndAddToStorage(remainingCountOfArguments);
 
-            var needToReadCount = argumentsCountOfThisCommand - args.Count;
-            ReadFromConsoleNTimes(needToReadCount, args);
-
-            var numbers = args.ConvertAll(int.Parse);
+            var argumentsAtEnd = CurrentCommandLines.Skip(1).ToList();
+            var numbers = argumentsAtEnd.ConvertAll(int.Parse);
             _userConsole.WriteLine(numbers.Sum().ToString(Culture));
         }
 
-        private void ReadFromConsoleNTimes(int needToReadCount, List<string> args)
+        private void ReadFromConsoleAndAddToStorage(int count)
         {
-            for (var i = 0; i < needToReadCount; i++)
+            for (var i = 0; i < count; i++)
             {
                 var value = ReadNumberFromConsole();
-                args.Add(value.ToString());
                 AddToStorage(value);
             }
         }
 
         private void Median()
         {
-            var medianArgumentsFromStorage = CurrentCommandLines.Skip(1).ToList();
+            var argumentsAtStart = CurrentCommandLines.Skip(1).ToList();
 
             int totalCountOfArguments;
-            if (medianArgumentsFromStorage.Count != 0)
+            if (argumentsAtStart.Count != 0)
             {
-                totalCountOfArguments = int.Parse(medianArgumentsFromStorage.First());
-                medianArgumentsFromStorage = medianArgumentsFromStorage.Skip(1).ToList();
+                totalCountOfArguments = int.Parse(argumentsAtStart.First());
+                argumentsAtStart = argumentsAtStart.Skip(1).ToList();
             }
             else
             {
                 totalCountOfArguments = ReadNumberFromConsole();
                 AddToStorage(totalCountOfArguments);
-            }
+            }    
+            
+            var remainingCountOfArguments = totalCountOfArguments - argumentsAtStart.Count;
+            
+            ReadFromConsoleAndAddToStorage(remainingCountOfArguments);
 
-            var remainingCountOfArguments = totalCountOfArguments - medianArgumentsFromStorage.Count;
-            ReadFromConsoleNTimes(remainingCountOfArguments, medianArgumentsFromStorage);
-
-
-            var numbers = medianArgumentsFromStorage.ConvertAll(int.Parse);
+            var argumentsAtEnd = CurrentCommandLines.Skip(2).ToList();
+            var numbers = argumentsAtEnd.ConvertAll(int.Parse);
             var result = CalculateMedian(numbers);
             _userConsole.WriteLine(result.ToString(Culture));
         }
@@ -184,7 +184,7 @@ namespace CommandLineCalculator
 
         private void AddToStorage(long value)
         {
-            AddToStorage(value.ToString());
+            AddToStorage(value.ToString(Culture));
         }
 
         private double CalculateMedian(List<int> numbers)
