@@ -19,7 +19,7 @@ namespace CommandLineCalculator
             .Split('\n').Where(com => !string.IsNullOrEmpty(com));
 
         private long NextRandomValue => System.Convert.ToInt64(StorageLines.First());
-        private IEnumerable<string> CurrentCommandLines => StorageLines.Skip(1);
+        private List<string> CurrentCommandLines => StorageLines.Skip(1).ToList();
 
         public override void Run(UserConsole userConsole, Storage storage)
         {
@@ -30,7 +30,7 @@ namespace CommandLineCalculator
 
             while (true)
             {
-                var commandName = GetCurrentCommandName();
+                var commandName = ReadCurrentCommandNameFrom(CurrentCommandLines);
 
                 switch (commandName)
                 {
@@ -66,12 +66,12 @@ namespace CommandLineCalculator
             }
         }
 
-        private string GetCurrentCommandName()
+        private string ReadCurrentCommandNameFrom(List<string> lines)
         {
             string commandName;
-            if (CurrentCommandLines.Any())
+            if (lines.Any())
             {
-                commandName = CurrentCommandLines.First();
+                commandName = lines.First();
             }
             else
             {
@@ -197,169 +197,50 @@ namespace CommandLineCalculator
             const string exitMessage = "Чтобы выйти из режима помощи введите end";
             const string commands = "Доступные команды: add, median, rand";
 
-            var storageValues = CurrentCommandLines.Skip(1).ToList();
+            var helpLinesFromStorage = CurrentCommandLines.Skip(1).ToList();
 
-            string message;
-
-            if (storageValues.Count != 0)
+            void WriteMessageIfWasNotWritten(string message)
             {
-                storageValues = storageValues.Skip(1).ToList();
-            }
-            else
-            {
-                message = "Укажите команду, для которой хотите посмотреть помощь";
-                _userConsole.WriteLine(message);
-                AddToStorage(message);
-            }
-
-            if (storageValues.Count != 0)
-            {
-                storageValues = storageValues.Skip(1).ToList();
-            }
-            else
-            {
-                message = commands;
-                _userConsole.WriteLine(message);
-                AddToStorage(message);
-            }
-
-            if (storageValues.Count != 0)
-            {
-                storageValues = storageValues.Skip(1).ToList();
-            }
-            else
-            {
-                message = exitMessage;
-                _userConsole.WriteLine(message);
-                AddToStorage(message);
-            }
-
-            while (true)
-            {
-                string command;
-
-                if (storageValues.Count != 0)
+                if (helpLinesFromStorage.Count != 0)
                 {
-                    command = storageValues.First();
-                    storageValues = storageValues.Skip(1).ToList();
+                    helpLinesFromStorage = helpLinesFromStorage.Skip(1).ToList();
                 }
                 else
                 {
-                    command = _userConsole.ReadLine().Trim();
-                    AddToStorage(command);
+                    _userConsole.WriteLine(message);
+                    AddToStorage(message);
                 }
+            }
+
+            WriteMessageIfWasNotWritten("Укажите команду, для которой хотите посмотреть помощь");
+            WriteMessageIfWasNotWritten(commands);
+            WriteMessageIfWasNotWritten(exitMessage);
+
+            while (true)
+            {
+                var command = ReadCurrentCommandNameFrom(helpLinesFromStorage);
+                helpLinesFromStorage = helpLinesFromStorage.Skip(1).ToList();
 
                 switch (command)
                 {
                     case "end":
                         return;
                     case "add":
-
-                        if (storageValues.Count != 0)
-                        {
-                            storageValues = storageValues.Skip(1).ToList();
-                        }
-                        else
-                        {
-                            message = "Вычисляет сумму двух чисел";
-                            _userConsole.WriteLine(message);
-                            AddToStorage(message);
-                        }
-
-                        if (storageValues.Count != 0)
-                        {
-                            storageValues = storageValues.Skip(1).ToList();
-                        }
-                        else
-                        {
-                            message = exitMessage;
-                            _userConsole.WriteLine(message);
-                            AddToStorage(message);
-                        }
-
+                        WriteMessageIfWasNotWritten("Вычисляет сумму двух чисел");
+                        WriteMessageIfWasNotWritten(exitMessage);
                         break;
                     case "median":
-                        if (storageValues.Count != 0)
-                        {
-                            storageValues = storageValues.Skip(1).ToList();
-                        }
-                        else
-                        {
-                            message = "Вычисляет медиану списка чисел";
-                            _userConsole.WriteLine(message);
-                            AddToStorage(message);
-                        }
-
-                        if (storageValues.Count != 0)
-                        {
-                            storageValues = storageValues.Skip(1).ToList();
-                        }
-                        else
-                        {
-                            message = exitMessage;
-                            _userConsole.WriteLine(message);
-                            AddToStorage(message);
-                        }
-
+                        WriteMessageIfWasNotWritten("Вычисляет медиану списка чисел");
+                        WriteMessageIfWasNotWritten(exitMessage);
                         break;
                     case "rand":
-                        if (storageValues.Count != 0)
-                        {
-                            storageValues = storageValues.Skip(1).ToList();
-                        }
-                        else
-                        {
-                            message = "Генерирует список случайных чисел";
-                            _userConsole.WriteLine(message);
-                            AddToStorage(message);
-                        }
-
-                        if (storageValues.Count != 0)
-                        {
-                            storageValues = storageValues.Skip(1).ToList();
-                        }
-                        else
-                        {
-                            message = exitMessage;
-                            _userConsole.WriteLine(message);
-                            AddToStorage(message);
-                        }
-
+                        WriteMessageIfWasNotWritten("Генерирует список случайных чисел");
+                        WriteMessageIfWasNotWritten(exitMessage);
                         break;
                     default:
-                        if (storageValues.Count != 0)
-                        {
-                            storageValues = storageValues.Skip(1).ToList();
-                        }
-                        else
-                        {
-                            message = "Такой команды нет";
-                            _userConsole.WriteLine(message);
-                            AddToStorage(message);
-                        }
-
-                        if (storageValues.Count != 0)
-                        {
-                            storageValues = storageValues.Skip(1).ToList();
-                        }
-                        else
-                        {
-                            message = commands;
-                            _userConsole.WriteLine(message);
-                            AddToStorage(message);
-                        }
-
-                        if (storageValues.Count != 0)
-                        {
-                            storageValues = storageValues.Skip(1).ToList();
-                        }
-                        else
-                        {
-                            message = exitMessage;
-                            _userConsole.WriteLine(message);
-                            AddToStorage(message);
-                        }
-
+                        WriteMessageIfWasNotWritten("Такой команды нет");
+                        WriteMessageIfWasNotWritten(commands);
+                        WriteMessageIfWasNotWritten(exitMessage);
                         break;
                 }
             }
