@@ -108,6 +108,7 @@ namespace CommandLineCalculator
         {
             var argumentsAtStart = CurrentCommandLines.Skip(1).ToList();
             var totalCountOfArguments = ReadTotalCountOfArguments(argumentsAtStart);
+            argumentsAtStart = argumentsAtStart.Skip(1).ToList();
             var remainingCountOfArguments = totalCountOfArguments - argumentsAtStart.Count;
 
             ReadFromConsoleAndAddToStorageFor(remainingCountOfArguments);
@@ -139,30 +140,17 @@ namespace CommandLineCalculator
             const int a = 16807;
             const int m = 2147483647;
 
-            var storageValues = CurrentCommandLines.Skip(1).ToList();
+            var argumentsAtStart = CurrentCommandLines.Skip(1).ToList();
+            var totalCountOfArguments = ReadTotalCountOfArguments(argumentsAtStart);
+            argumentsAtStart = argumentsAtStart.Skip(1).ToList();
+            var remainingCountOfArguments = totalCountOfArguments - argumentsAtStart.Count;
 
-            int argumentsCountOfThisCommand;
-            if (storageValues.Count != 0)
+            for (var i = 0; i < remainingCountOfArguments; i++)
             {
-                argumentsCountOfThisCommand = int.Parse(storageValues.First());
-                storageValues = storageValues.Skip(1).ToList();
-            }
-            else
-            {
-                argumentsCountOfThisCommand = ReadNumberFromConsole();
-                AddToStorage(argumentsCountOfThisCommand);
-            }
-
-            var restCountRandomValues = argumentsCountOfThisCommand - storageValues.Count;
-
-            var x = NextRandomValue;
-
-            for (var i = 0; i < restCountRandomValues; i++)
-            {
-                _userConsole.WriteLine(x.ToString(Culture));
-                AddToStorage(x);
-                x = a * x % m;
-                ChangeCurrentRandomValueFor(x);
+                var currentRandomValue = NextRandomValue;
+                _userConsole.WriteLine(currentRandomValue.ToString(Culture));
+                AddToStorage(currentRandomValue);
+                ChangeCurrentRandomValueFor(a * currentRandomValue % m);
             }
         }
 
