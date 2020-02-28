@@ -16,7 +16,7 @@ namespace CommandLineCalculator
         private byte[] StorageBytes => _storage.Read();
 
         private IEnumerable<string> StorageLines => UTF8.GetString(StorageBytes).Trim()
-            .Split('\n').Where(com => !string.IsNullOrEmpty(com));
+            .Split('\n').Where(line => !string.IsNullOrEmpty(line));
 
         private long NextRandomValue => System.Convert.ToInt64(StorageLines.First());
         private List<string> CurrentCommandLines => StorageLines.Skip(1).ToList();
@@ -30,7 +30,7 @@ namespace CommandLineCalculator
 
             while (true)
             {
-                var commandName = ReadCurrentCommandNameFrom(CurrentCommandLines);
+                var commandName = ReadCurrentCommandName(CurrentCommandLines);
 
                 switch (commandName)
                 {
@@ -55,23 +55,24 @@ namespace CommandLineCalculator
 
                 ClearStorageAndWriteNextRandom();
             }
-        }
 
-        private void InitializeStorageIfEmpty()
-        {
-            if (StorageBytes == null || StorageBytes.Length == 0)
+
+            void InitializeStorageIfEmpty()
             {
-                const long firstRandomValue = 420L;
-                AddToStorage(firstRandomValue);
+                if (StorageBytes == null || StorageBytes.Length == 0)
+                {
+                    const long firstRandomValue = 420L;
+                    AddToStorage(firstRandomValue);
+                }
             }
         }
 
-        private string ReadCurrentCommandNameFrom(List<string> lines)
+        private string ReadCurrentCommandName(List<string> storageLines)
         {
             string commandName;
-            if (lines.Any())
+            if (storageLines.Any())
             {
-                commandName = lines.First();
+                commandName = storageLines.First();
             }
             else
             {
@@ -85,14 +86,14 @@ namespace CommandLineCalculator
         private void Add()
         {
             const int totalCountOfArguments = 2;
-            var argumentsAtStart = CurrentCommandLines.Skip(1).ToList();
-            var remainingCountOfArguments = totalCountOfArguments - argumentsAtStart.Count;
+            var argumentsFromStorage = CurrentCommandLines.Skip(1).ToList();
+            var remainingCountOfArguments = totalCountOfArguments - argumentsFromStorage.Count;
 
             ReadFromConsoleAndAddToStorageFor(remainingCountOfArguments);
 
-            var argumentsAtEnd = CurrentCommandLines.Skip(1).ToList();
-            var numbers = argumentsAtEnd.ConvertAll(int.Parse);
-            _userConsole.WriteLine(numbers.Sum().ToString(Culture));
+            var argumentsToExecuteAdd = CurrentCommandLines.Skip(1).ToList();
+            var numbersToExecuteAdd = argumentsToExecuteAdd.ConvertAll(int.Parse);
+            _userConsole.WriteLine(numbersToExecuteAdd.Sum().ToString(Culture));
         }
 
         private void ReadFromConsoleAndAddToStorageFor(int count)
@@ -106,16 +107,16 @@ namespace CommandLineCalculator
 
         private void Median()
         {
-            var argumentsAtStart = CurrentCommandLines.Skip(1).ToList();
-            var totalCountOfArguments = ReadTotalCountOfArguments(argumentsAtStart);
-            argumentsAtStart = argumentsAtStart.Skip(1).ToList();
-            var remainingCountOfArguments = totalCountOfArguments - argumentsAtStart.Count;
+            var argumentsFromStorage = CurrentCommandLines.Skip(1).ToList();
+            var totalCountOfArguments = ReadTotalCountOfArguments(argumentsFromStorage);
+            argumentsFromStorage = argumentsFromStorage.Skip(1).ToList();
+            var remainingCountOfArguments = totalCountOfArguments - argumentsFromStorage.Count;
 
             ReadFromConsoleAndAddToStorageFor(remainingCountOfArguments);
 
-            var argumentsExceptCountAtEnd = CurrentCommandLines.Skip(2).ToList();
-            var numbers = argumentsExceptCountAtEnd.ConvertAll(int.Parse);
-            _userConsole.WriteLine(CalculateMedian(numbers).ToString(Culture));
+            var argumentsToExecuteMedian = CurrentCommandLines.Skip(2).ToList();
+            var numbersToExecuteMedian = argumentsToExecuteMedian.ConvertAll(int.Parse);
+            _userConsole.WriteLine(CalculateMedian(numbersToExecuteMedian).ToString(Culture));
         }
 
         private int ReadTotalCountOfArguments(List<string> argumentsAtStart)
@@ -140,10 +141,10 @@ namespace CommandLineCalculator
             const int a = 16807;
             const int m = 2147483647;
 
-            var argumentsAtStart = CurrentCommandLines.Skip(1).ToList();
-            var totalCountOfArguments = ReadTotalCountOfArguments(argumentsAtStart);
-            argumentsAtStart = argumentsAtStart.Skip(1).ToList();
-            var remainingCountOfArguments = totalCountOfArguments - argumentsAtStart.Count;
+            var argumentsFromStorage = CurrentCommandLines.Skip(1).ToList();
+            var totalCountOfArguments = ReadTotalCountOfArguments(argumentsFromStorage);
+            argumentsFromStorage = argumentsFromStorage.Skip(1).ToList();
+            var remainingCountOfArguments = totalCountOfArguments - argumentsFromStorage.Count;
 
             for (var i = 0; i < remainingCountOfArguments; i++)
             {
@@ -198,30 +199,17 @@ namespace CommandLineCalculator
             const string commands = "Доступные команды: add, median, rand";
 
             var helpLinesFromStorage = CurrentCommandLines.Skip(1).ToList();
-
-            void WriteMessageIfWasNotWritten(string message)
-            {
-                if (helpLinesFromStorage.Count != 0)
-                {
-                    helpLinesFromStorage = helpLinesFromStorage.Skip(1).ToList();
-                }
-                else
-                {
-                    _userConsole.WriteLine(message);
-                    AddToStorage(message);
-                }
-            }
-
+            
             WriteMessageIfWasNotWritten("Укажите команду, для которой хотите посмотреть помощь");
             WriteMessageIfWasNotWritten(commands);
             WriteMessageIfWasNotWritten(exitMessage);
 
             while (true)
             {
-                var command = ReadCurrentCommandNameFrom(helpLinesFromStorage);
+                var commandName = ReadCurrentCommandName(helpLinesFromStorage);
                 helpLinesFromStorage = helpLinesFromStorage.Skip(1).ToList();
 
-                switch (command)
+                switch (commandName)
                 {
                     case "end":
                         return;
@@ -242,6 +230,19 @@ namespace CommandLineCalculator
                         WriteMessageIfWasNotWritten(commands);
                         WriteMessageIfWasNotWritten(exitMessage);
                         break;
+                }
+            }
+
+            void WriteMessageIfWasNotWritten(string message)
+            {
+                if (helpLinesFromStorage.Count != 0)
+                {
+                    helpLinesFromStorage = helpLinesFromStorage.Skip(1).ToList();
+                }
+                else
+                {
+                    _userConsole.WriteLine(message);
+                    AddToStorage(message);
                 }
             }
         }
