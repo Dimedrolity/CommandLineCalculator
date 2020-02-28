@@ -10,36 +10,37 @@ namespace CommandLineCalculator
     {
         private static CultureInfo Culture => CultureInfo.InvariantCulture;
 
-        private const long FirstRandomValue = 420L;
-
-        private Storage storage;
-        private byte[] StorageBytes => storage.Read().ToArray();
-
+        private UserConsole _userConsole;
+        
+        private Storage _storage;
+        private byte[] StorageBytes => _storage.Read();
         private bool IsStorageEmpty => StorageBytes == null || StorageBytes.Length == 0;
 
         private IEnumerable<string> StorageLines => UTF8.GetString(StorageBytes).Trim()
             .Split('\n').Where(com => !string.IsNullOrEmpty(com));
 
-        private string[] StoragePartsWithoutRandomValue => StorageLines.Skip(1).ToArray();
-
-        private long CurrentRandomValue => System.Convert.ToInt64(StorageLines.FirstOrDefault());
+        private long NextRandomValue => System.Convert.ToInt64(StorageLines.First());
+        
+        private IEnumerable<string> StorageLinesExceptRandomValue => StorageLines.Skip(1);
 
         public override void Run(UserConsole userConsole, Storage storage)
         {
-            this.storage = storage;
-
+            _storage = storage;
+            _userConsole = userConsole;
+            
             if (IsStorageEmpty)
             {
-                AddToStorage(FirstRandomValue);
+                const long firstRandomValue = 420L;
+                AddToStorage(firstRandomValue);
             }
 
             while (true)
             {
-                var commandName = StoragePartsWithoutRandomValue == null || StoragePartsWithoutRandomValue.Length == 0
-                    ? userConsole.ReadLine().Trim()
-                    : StoragePartsWithoutRandomValue[0];
+                var commandName = StorageLinesExceptRandomValue == null || !StorageLinesExceptRandomValue.Any()
+                    ? _userConsole.ReadLine().Trim()
+                    : StorageLinesExceptRandomValue.First();
 
-                if (StoragePartsWithoutRandomValue == null || StoragePartsWithoutRandomValue.Length == 0)
+                if (StorageLinesExceptRandomValue == null || !StorageLinesExceptRandomValue.Any())
                 {
                     AddToStorage(commandName);
                 }
@@ -49,83 +50,83 @@ namespace CommandLineCalculator
                     case "exit":
                         return;
                     case "add":
-                        Add(userConsole);
+                        Add();
                         break;
                     case "median":
-                        Median(userConsole);
+                        Median();
                         break;
                     case "help":
-                        Help(userConsole);
+                        Help();
                         break;
                     case "rand":
-                        Random(userConsole, CurrentRandomValue);
+                        Random();
                         break;
                     default:
-                        userConsole.WriteLine("Такой команды нет, используйте help для списка команд");
+                        _userConsole.WriteLine("Такой команды нет, используйте help для списка команд");
                         ClearStorageAndWriteCurrentRandom();
                         break;
                 }
             }
         }
 
-        private void Add(UserConsole console)
+        private void Add()
         {
             const int argumentsCountOfThisCommand = 2;
 
-            var args = StoragePartsWithoutRandomValue?.Skip(1).ToList();
+            var args = StorageLinesExceptRandomValue?.Skip(1).ToList();
 
             var needToReadCount = argumentsCountOfThisCommand - args.Count;
-            ReadFromConsoleNTimes(console, needToReadCount, args);
+            ReadFromConsoleNTimes(needToReadCount, args);
 
             var numbers = args.ConvertAll(int.Parse);
-            console.WriteLine(numbers.Sum().ToString(Culture)); //result
+            _userConsole.WriteLine(numbers.Sum().ToString(Culture)); 
 
             ClearStorageAndWriteCurrentRandom();
         }
 
-        private void ReadFromConsoleNTimes(UserConsole console, int needToReadCount, List<string> args)
+        private void ReadFromConsoleNTimes(int needToReadCount, List<string> args)
         {
             for (var i = 0; i < needToReadCount; i++)
             {
-                var value = ReadNumber(console);
+                var value = ReadNumberFromConsole();
                 args.Add(value.ToString());
                 AddToStorage(value);
             }
         }
 
-        private void Median(UserConsole console)
+        private void Median()
         {
-            var args = StoragePartsWithoutRandomValue.Skip(1).ToList();
+            var medianArgumentsFromStorage = StorageLinesExceptRandomValue.Skip(1).ToList();
 
-            int argumentsCountOfThisCommand;
-            if (args.Count != 0)
+            int totalCountOfArguments;
+            if (medianArgumentsFromStorage.Count != 0)
             {
-                argumentsCountOfThisCommand = int.Parse(args.First());
-                args = args.Skip(1).ToList();
+                totalCountOfArguments = int.Parse(medianArgumentsFromStorage.First());
+                medianArgumentsFromStorage = medianArgumentsFromStorage.Skip(1).ToList();
             }
             else
             {
-                argumentsCountOfThisCommand = ReadNumber(console);
-                AddToStorage(argumentsCountOfThisCommand);
+                totalCountOfArguments = ReadNumberFromConsole();
+                AddToStorage(totalCountOfArguments);
             }
 
-            var needToReadCount = argumentsCountOfThisCommand - args.Count;
-            ReadFromConsoleNTimes(console, needToReadCount, args);
+            var remainingCountOfArguments = totalCountOfArguments - medianArgumentsFromStorage.Count;
+            ReadFromConsoleNTimes(remainingCountOfArguments, medianArgumentsFromStorage);
 
 
-            var numbers = args.ConvertAll(int.Parse);
+            var numbers = medianArgumentsFromStorage.ConvertAll(int.Parse);
             var result = CalculateMedian(numbers);
-            console.WriteLine(result.ToString(Culture));
+            _userConsole.WriteLine(result.ToString(Culture));
 
             ClearStorageAndWriteCurrentRandom();
         }
 
-        private void Random(UserConsole console, long x)
+        private void Random()
         {
             const int a = 16807;
             const int m = 2147483647;
 
-            var storageValues = StoragePartsWithoutRandomValue.Skip(1).ToList();
+            var storageValues = StorageLinesExceptRandomValue.Skip(1).ToList();
 
             int argumentsCountOfThisCommand;
             if (storageValues.Count != 0)
@@ -135,15 +136,17 @@ namespace CommandLineCalculator
             }
             else
             {
-                argumentsCountOfThisCommand = ReadNumber(console);
+                argumentsCountOfThisCommand = ReadNumberFromConsole();
                 AddToStorage(argumentsCountOfThisCommand);
             }
 
             var restCountRandomValues = argumentsCountOfThisCommand - storageValues.Count;
 
+            var x = NextRandomValue;
+            
             for (var i = 0; i < restCountRandomValues; i++)
             {
-                console.WriteLine(x.ToString(Culture));
+                _userConsole.WriteLine(x.ToString(Culture));
                 AddToStorage(x);
                 x = a * x % m;
                 RewriteCurrentRandomValue(x);
@@ -155,29 +158,26 @@ namespace CommandLineCalculator
         private void RewriteCurrentRandomValue(long newRandomValue)
         {
             var valueBytes = UTF8.GetBytes($"{newRandomValue}\n");
-            var rest = string.Join("\n", StoragePartsWithoutRandomValue) + "\n";
-            storage.Write(valueBytes.Concat(UTF8.GetBytes(rest)).ToArray());
+            var rest = string.Join("\n", StorageLinesExceptRandomValue) + "\n";
+            _storage.Write(valueBytes.Concat(UTF8.GetBytes(rest)).ToArray());
         }
 
         private void ClearStorageAndWriteCurrentRandom()
         {
-            var current = CurrentRandomValue;
-            storage.Write(Array.Empty<byte>());
-            storage.Write(UTF8.GetBytes($"{current}\n"));
+            var current = NextRandomValue;
+            _storage.Write(Array.Empty<byte>());
+            _storage.Write(UTF8.GetBytes($"{current}\n"));
         }
 
         private void AddToStorage(string value)
         {
             var valueBytes = UTF8.GetBytes($"{value}\n");
-            storage.Write(StorageBytes.Concat(valueBytes).ToArray());
+            _storage.Write(StorageBytes.Concat(valueBytes).ToArray());
         }
 
         private void AddToStorage(long value)
         {
-            var valueBytes = UTF8.GetBytes($"{value}");
-            var nb = UTF8.GetBytes("\n");
-            var newVb = valueBytes.Concat(nb).ToArray();
-            storage.Write(StorageBytes.Concat(newVb).ToArray());
+            AddToStorage(value.ToString());
         }
 
         private double CalculateMedian(List<int> numbers)
@@ -193,12 +193,12 @@ namespace CommandLineCalculator
             return (numbers[count / 2 - 1] + numbers[count / 2]) / 2.0;
         }
 
-        private void Help(UserConsole console)
+        private void Help()
         {
             const string exitMessage = "Чтобы выйти из режима помощи введите end";
             const string commands = "Доступные команды: add, median, rand";
 
-            var storageValues = StoragePartsWithoutRandomValue.Skip(1).ToList();
+            var storageValues = StorageLinesExceptRandomValue.Skip(1).ToList();
 
             string message;
 
@@ -209,7 +209,7 @@ namespace CommandLineCalculator
             else
             {
                 message = "Укажите команду, для которой хотите посмотреть помощь";
-                console.WriteLine(message);
+                _userConsole.WriteLine(message);
                 AddToStorage(message);
             }
 
@@ -220,7 +220,7 @@ namespace CommandLineCalculator
             else
             {
                 message = commands;
-                console.WriteLine(message);
+                _userConsole.WriteLine(message);
                 AddToStorage(message);
             }
 
@@ -231,7 +231,7 @@ namespace CommandLineCalculator
             else
             {
                 message = exitMessage;
-                console.WriteLine(message);
+                _userConsole.WriteLine(message);
                 AddToStorage(message);
             }
 
@@ -246,7 +246,7 @@ namespace CommandLineCalculator
                 }
                 else
                 {
-                    command = console.ReadLine().Trim();
+                    command = _userConsole.ReadLine().Trim();
                     AddToStorage(command);
                 }
 
@@ -264,7 +264,7 @@ namespace CommandLineCalculator
                         else
                         {
                             message = "Вычисляет сумму двух чисел";
-                            console.WriteLine(message);
+                            _userConsole.WriteLine(message);
                             AddToStorage(message);
                         }
 
@@ -275,7 +275,7 @@ namespace CommandLineCalculator
                         else
                         {
                             message = exitMessage;
-                            console.WriteLine(message);
+                            _userConsole.WriteLine(message);
                             AddToStorage(message);
                         }
 
@@ -288,7 +288,7 @@ namespace CommandLineCalculator
                         else
                         {
                             message = "Вычисляет медиану списка чисел";
-                            console.WriteLine(message);
+                            _userConsole.WriteLine(message);
                             AddToStorage(message);
                         }
 
@@ -299,7 +299,7 @@ namespace CommandLineCalculator
                         else
                         {
                             message = exitMessage;
-                            console.WriteLine(message);
+                            _userConsole.WriteLine(message);
                             AddToStorage(message);
                         }
 
@@ -312,7 +312,7 @@ namespace CommandLineCalculator
                         else
                         {
                             message = "Генерирует список случайных чисел";
-                            console.WriteLine(message);
+                            _userConsole.WriteLine(message);
                             AddToStorage(message);
                         }
 
@@ -323,7 +323,7 @@ namespace CommandLineCalculator
                         else
                         {
                             message = exitMessage;
-                            console.WriteLine(message);
+                            _userConsole.WriteLine(message);
                             AddToStorage(message);
                         }
 
@@ -336,7 +336,7 @@ namespace CommandLineCalculator
                         else
                         {
                             message = "Такой команды нет";
-                            console.WriteLine(message);
+                            _userConsole.WriteLine(message);
                             AddToStorage(message);
                         }
 
@@ -347,7 +347,7 @@ namespace CommandLineCalculator
                         else
                         {
                             message = commands;
-                            console.WriteLine(message);
+                            _userConsole.WriteLine(message);
                             AddToStorage(message);
                         }
 
@@ -358,7 +358,7 @@ namespace CommandLineCalculator
                         else
                         {
                             message = exitMessage;
-                            console.WriteLine(message);
+                            _userConsole.WriteLine(message);
                             AddToStorage(message);
                         }
 
@@ -367,9 +367,9 @@ namespace CommandLineCalculator
             }
         }
 
-        private int ReadNumber(UserConsole console)
+        private int ReadNumberFromConsole()
         {
-            return int.Parse(console.ReadLine().Trim(), Culture);
+            return int.Parse(_userConsole.ReadLine().Trim(), Culture);
         }
     }
 }
