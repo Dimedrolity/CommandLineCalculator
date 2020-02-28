@@ -53,7 +53,7 @@ namespace CommandLineCalculator
                         break;
                 }
 
-                ClearStorageAndWriteCurrentRandom();
+                ClearStorageAndWriteNextRandom();
             }
         }
 
@@ -88,14 +88,14 @@ namespace CommandLineCalculator
             var argumentsAtStart = CurrentCommandLines.Skip(1).ToList();
             var remainingCountOfArguments = totalCountOfArguments - argumentsAtStart.Count;
 
-            ReadFromConsoleAndAddToStorage(remainingCountOfArguments);
+            ReadFromConsoleAndAddToStorageFor(remainingCountOfArguments);
 
             var argumentsAtEnd = CurrentCommandLines.Skip(1).ToList();
             var numbers = argumentsAtEnd.ConvertAll(int.Parse);
             _userConsole.WriteLine(numbers.Sum().ToString(Culture));
         }
 
-        private void ReadFromConsoleAndAddToStorage(int count)
+        private void ReadFromConsoleAndAddToStorageFor(int count)
         {
             for (var i = 0; i < count; i++)
             {
@@ -107,27 +107,31 @@ namespace CommandLineCalculator
         private void Median()
         {
             var argumentsAtStart = CurrentCommandLines.Skip(1).ToList();
+            var totalCountOfArguments = ReadTotalCountOfArguments(argumentsAtStart);
+            var remainingCountOfArguments = totalCountOfArguments - argumentsAtStart.Count;
 
+            ReadFromConsoleAndAddToStorageFor(remainingCountOfArguments);
+
+            var argumentsExceptCountAtEnd = CurrentCommandLines.Skip(2).ToList();
+            var numbers = argumentsExceptCountAtEnd.ConvertAll(int.Parse);
+            _userConsole.WriteLine(CalculateMedian(numbers).ToString(Culture));
+        }
+
+        private int ReadTotalCountOfArguments(List<string> argumentsAtStart)
+        {
             int totalCountOfArguments;
-            if (argumentsAtStart.Count != 0)
-            {
-                totalCountOfArguments = int.Parse(argumentsAtStart.First());
-                argumentsAtStart = argumentsAtStart.Skip(1).ToList();
-            }
-            else
+
+            if (argumentsAtStart.Count == 0)
             {
                 totalCountOfArguments = ReadNumberFromConsole();
                 AddToStorage(totalCountOfArguments);
-            }    
-            
-            var remainingCountOfArguments = totalCountOfArguments - argumentsAtStart.Count;
-            
-            ReadFromConsoleAndAddToStorage(remainingCountOfArguments);
+            }
+            else
+            {
+                totalCountOfArguments = int.Parse(argumentsAtStart.First());
+            }
 
-            var argumentsAtEnd = CurrentCommandLines.Skip(2).ToList();
-            var numbers = argumentsAtEnd.ConvertAll(int.Parse);
-            var result = CalculateMedian(numbers);
-            _userConsole.WriteLine(result.ToString(Culture));
+            return totalCountOfArguments;
         }
 
         private void Random()
@@ -158,22 +162,22 @@ namespace CommandLineCalculator
                 _userConsole.WriteLine(x.ToString(Culture));
                 AddToStorage(x);
                 x = a * x % m;
-                RewriteCurrentRandomValue(x);
+                ChangeCurrentRandomValueFor(x);
             }
         }
 
-        private void RewriteCurrentRandomValue(long newRandomValue)
+        private void ChangeCurrentRandomValueFor(long nextRandomValue)
         {
-            var valueBytes = UTF8.GetBytes($"{newRandomValue}\n");
-            var rest = string.Join("\n", CurrentCommandLines) + "\n";
-            _storage.Write(valueBytes.Concat(UTF8.GetBytes(rest)).ToArray());
+            var randomValueBytes = UTF8.GetBytes($"{nextRandomValue}\n");
+            var currentCommandBytes = UTF8.GetBytes(string.Join("\n", CurrentCommandLines) + "\n");
+            _storage.Write(randomValueBytes.Concat(currentCommandBytes).ToArray());
         }
 
-        private void ClearStorageAndWriteCurrentRandom()
+        private void ClearStorageAndWriteNextRandom()
         {
-            var current = NextRandomValue;
+            var nextRandomValue = NextRandomValue;
             _storage.Write(Array.Empty<byte>());
-            _storage.Write(UTF8.GetBytes($"{current}\n"));
+            _storage.Write(UTF8.GetBytes($"{nextRandomValue}\n"));
         }
 
         private void AddToStorage(string value)
