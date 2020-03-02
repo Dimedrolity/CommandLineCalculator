@@ -17,8 +17,7 @@ namespace CommandLineCalculator
         {
             _consoleWithStorage = new ConsoleWithStorage(userConsole, storage);
 
-            // var x = System.Convert.ToInt64(_consoleWithStorage.ReadLine());
-
+            var x = _consoleWithStorage.GetNextRandom();
 
             while (true)
             {
@@ -35,9 +34,8 @@ namespace CommandLineCalculator
                         Median();
                         break;
                     case "rand":
-                        var x =
-                            Random();
-                        _consoleWithStorage.ChangeCurrentRandomValueFor(x);
+                        x = Random(x);
+                        _consoleWithStorage.ChangeCurrentRandomValueTo(x);
                         break;
                     // case "help":
                     //     Help();
@@ -47,7 +45,7 @@ namespace CommandLineCalculator
                         break;
                 }
 
-                _consoleWithStorage.CommandIsDone();
+                _consoleWithStorage.CurrentCommandIsDone();
             }
         }
 
@@ -91,11 +89,11 @@ namespace CommandLineCalculator
         }
 
 
-        private long Random()
+        private long Random(long x)
         {
             const int a = 16807;
             const int m = 2147483647;
-            var x = _consoleWithStorage.GetNextRandom();
+
 
             var count = ReadNumberFromConsole();
             for (var i = 0; i < count; i++)
@@ -235,7 +233,7 @@ namespace CommandLineCalculator
                 return readLine;
             }
 
-            public void ChangeCurrentRandomValueFor(long nextRandomValue)
+            public void ChangeCurrentRandomValueTo(long nextRandomValue)
             {
                 var randomValueBytes = UTF8.GetBytes($"{nextRandomValue}\n");
                 var currentCommandBytes = UTF8.GetBytes(string.Join("\n", StorageLines.Skip(1)) + "\n");
@@ -277,7 +275,7 @@ namespace CommandLineCalculator
                 _storage.Write(UTF8.GetBytes($"{nextRandomValue}\n"));
             }
 
-            public void CommandIsDone()
+            public void CurrentCommandIsDone()
             {
                 _currentLine = 1;
                 ClearStorageAndWriteNextRandom();
