@@ -11,35 +11,32 @@ namespace CommandLineCalculator
     {
         private static CultureInfo Culture => CultureInfo.InvariantCulture;
 
-        private ConsoleWithStorage _consoleWithStorage;
-
         public override void Run(UserConsole userConsole, Storage storage)
         {
-            _consoleWithStorage = new ConsoleWithStorage(userConsole, storage);
+            var _consoleWithStorage = new ConsoleWithStorage(userConsole, storage);
 
             var x = _consoleWithStorage.GetNextRandom();
 
             while (true)
             {
-                var commandName = _consoleWithStorage.ReadLine();
-
-                switch (commandName)
+                var input = _consoleWithStorage.ReadLine();
+                switch (input.Trim())
                 {
                     case "exit":
                         return;
                     case "add":
-                        Add();
+                        Add(_consoleWithStorage);
                         break;
                     case "median":
-                        Median();
+                        Median(_consoleWithStorage);
+                        break;
+                    case "help":
+                        Help(_consoleWithStorage);
                         break;
                     case "rand":
-                        x = Random(x);
+                        x = Random(_consoleWithStorage, x);
                         _consoleWithStorage.ChangeCurrentRandomValueTo(x);
                         break;
-                    // case "help":
-                    //     Help();
-                    //     break;
                     default:
                         _consoleWithStorage.WriteLine("Такой команды нет, используйте help для списка команд");
                         break;
@@ -49,30 +46,24 @@ namespace CommandLineCalculator
             }
         }
 
-
-        private void Add()
+        private void Add(UserConsole console)
         {
-            var a = ReadNumberFromConsole();
-            var b = ReadNumberFromConsole();
-            _consoleWithStorage.WriteLine((a + b).ToString(Culture));
+            var a = ReadNumber(console);
+            var b = ReadNumber(console);
+            console.WriteLine((a + b).ToString(Culture));
         }
 
-        private int ReadNumberFromConsole()
+        private void Median(UserConsole console)
         {
-            return int.Parse(_consoleWithStorage.ReadLine().Trim(), Culture);
-        }
-
-        private void Median()
-        {
-            var count = ReadNumberFromConsole();
+            var count = ReadNumber(console);
             var numbers = new List<int>();
             for (var i = 0; i < count; i++)
             {
-                numbers.Add(ReadNumberFromConsole());
+                numbers.Add(ReadNumber(console));
             }
 
             var result = CalculateMedian(numbers);
-            _consoleWithStorage.WriteLine(result.ToString(Culture));
+            console.WriteLine(result.ToString(Culture));
         }
 
         private double CalculateMedian(List<int> numbers)
@@ -88,105 +79,79 @@ namespace CommandLineCalculator
             return (numbers[count / 2 - 1] + numbers[count / 2]) / 2.0;
         }
 
-
-        private long Random(long x)
+        private long Random(UserConsole console, long x)
         {
             const int a = 16807;
             const int m = 2147483647;
 
 
-            var count = ReadNumberFromConsole();
+            var count = ReadNumber(console);
             for (var i = 0; i < count; i++)
             {
-                _consoleWithStorage.WriteLine(x.ToString(Culture));
+                console.WriteLine(x.ToString(Culture));
                 x = a * x % m;
             }
 
             return x;
         }
 
+        private static void Help(UserConsole console)
+        {
+            const string exitMessage = "Чтобы выйти из режима помощи введите end";
+            const string commands = "Доступные команды: add, median, rand";
 
-        #region Help
+            console.WriteLine("Укажите команду, для которой хотите посмотреть помощь");
+            console.WriteLine(commands);
+            console.WriteLine(exitMessage);
+            while (true)
+            {
+                var command = console.ReadLine();
+                switch (command.Trim())
+                {
+                    case "end":
+                        return;
+                    case "add":
+                        console.WriteLine("Вычисляет сумму двух чисел");
+                        console.WriteLine(exitMessage);
+                        break;
+                    case "median":
+                        console.WriteLine("Вычисляет медиану списка чисел");
+                        console.WriteLine(exitMessage);
+                        break;
+                    case "rand":
+                        console.WriteLine("Генерирует список случайных чисел");
+                        console.WriteLine(exitMessage);
+                        break;
+                    default:
+                        console.WriteLine("Такой команды нет");
+                        console.WriteLine(commands);
+                        console.WriteLine(exitMessage);
+                        break;
+                }
+            }
+        }
 
-        // private void Help()
-        // {
-        //     const string exitMessage = "Чтобы выйти из режима помощи введите end";
-        //     const string commands = "Доступные команды: add, median, rand";
-        //
-        //     var helpLinesFromStorage = CurrentCommandLines.Skip(1).ToList();
-        //
-        //     WriteMessageIfWasNotWritten("Укажите команду, для которой хотите посмотреть помощь");
-        //     WriteMessageIfWasNotWritten(commands);
-        //     WriteMessageIfWasNotWritten(exitMessage);
-        //
-        //     while (true)
-        //     {
-        //         var commandName = ReadCurrentCommandName(helpLinesFromStorage);
-        //         helpLinesFromStorage = helpLinesFromStorage.Skip(1).ToList();
-        //
-        //         switch (commandName)
-        //         {
-        //             case "end":
-        //                 return;
-        //             case "add":
-        //                 WriteMessageIfWasNotWritten("Вычисляет сумму двух чисел");
-        //                 WriteMessageIfWasNotWritten(exitMessage);
-        //                 break;
-        //             case "median":
-        //                 WriteMessageIfWasNotWritten("Вычисляет медиану списка чисел");
-        //                 WriteMessageIfWasNotWritten(exitMessage);
-        //                 break;
-        //             case "rand":
-        //                 WriteMessageIfWasNotWritten("Генерирует список случайных чисел");
-        //                 WriteMessageIfWasNotWritten(exitMessage);
-        //                 break;
-        //             default:
-        //                 WriteMessageIfWasNotWritten("Такой команды нет");
-        //                 WriteMessageIfWasNotWritten(commands);
-        //                 WriteMessageIfWasNotWritten(exitMessage);
-        //                 break;
-        //         }
-        //     }
-        //
-        //     void WriteMessageIfWasNotWritten(string message)
-        //     {
-        //         if (helpLinesFromStorage.Count != 0)
-        //         {
-        //             helpLinesFromStorage = helpLinesFromStorage.Skip(1).ToList();
-        //         }
-        //         else
-        //         {
-        //             _userConsole.WriteLine(message);
-        //             AddToStorage(message);
-        //         }
-        //     }
-        // }
-
-        #endregion
-
+        private int ReadNumber(UserConsole console)
+        {
+            return int.Parse(console.ReadLine().Trim(), Culture);
+        }
 
         private class ConsoleWithStorage : UserConsole
         {
-            private static CultureInfo Culture => CultureInfo.InvariantCulture;
-
-            private UserConsole _console;
-            private Storage _storage;
+            private readonly UserConsole _console;
+            private readonly Storage _storage;
 
             private int _currentLine = 1;
+            
             private byte[] StorageBytes => _storage.Read();
-
             private List<string> StorageLines => UTF8.GetString(StorageBytes).Trim()
                 .Split('\n').Where(line => !string.IsNullOrEmpty(line)).ToList();
-
-            // private long NextRandomValue => System.Convert.ToInt64(StorageLines.First());
-            // private List<string> CurrentCommandLines => StorageLines.Skip(1).ToList();
 
             public ConsoleWithStorage(UserConsole console, Storage storage)
             {
                 _console = console;
                 _storage = storage;
 
-                // _currentLine = StorageLines.Count();
                 InitializeStorageIfEmpty();
             }
 
@@ -197,11 +162,6 @@ namespace CommandLineCalculator
                     const long firstRandomValue = 420L;
                     AddToStorage(firstRandomValue);
                 }
-
-                // else
-                // {
-                //     _currentLine = StorageLines.Count();
-                // }
             }
 
             private void AddToStorage(string value)
@@ -218,13 +178,13 @@ namespace CommandLineCalculator
             public override string ReadLine()
             {
                 string readLine;
-                if (_currentLine < StorageLines.Count())
+                if (_currentLine < StorageLines.Count)
                 {
                     readLine = StorageLines[_currentLine];
                 }
                 else
                 {
-                    readLine = _console.ReadLine().Trim();
+                    readLine = _console.ReadLine();
                     AddToStorage(readLine);
                 }
 
@@ -239,22 +199,6 @@ namespace CommandLineCalculator
                 var currentCommandBytes = UTF8.GetBytes(string.Join("\n", StorageLines.Skip(1)) + "\n");
                 _storage.Write(randomValueBytes.Concat(currentCommandBytes).ToArray());
             }
-
-            // public string ReadCurrentCommandName(List<string> storageLines)
-            // {
-            //     string commandName;
-            //     if (storageLines.Any())
-            //     {
-            //         commandName = storageLines.First();
-            //     }
-            //     else
-            //     {
-            //         commandName = _console.ReadLine().Trim();
-            //         AddToStorage(commandName);
-            //     }
-            //
-            //     return commandName;
-            // }
 
             public override void WriteLine(string content)
             {
