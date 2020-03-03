@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Reflection.Emit;
 using static System.Text.Encoding;
 
 namespace CommandLineCalculator
@@ -13,36 +12,36 @@ namespace CommandLineCalculator
 
         public override void Run(UserConsole userConsole, Storage storage)
         {
-            var _consoleWithStorage = new ConsoleWithStorage(userConsole, storage);
+            var consoleWithStorage = new ConsoleWithStorage(userConsole, storage);
 
-            var x = _consoleWithStorage.GetNextRandom();
+            var x = consoleWithStorage.GetNextRandom();
 
             while (true)
             {
-                var input = _consoleWithStorage.ReadLine();
+                var input = consoleWithStorage.ReadLine();
                 switch (input.Trim())
                 {
                     case "exit":
                         return;
                     case "add":
-                        Add(_consoleWithStorage);
+                        Add(consoleWithStorage);
                         break;
                     case "median":
-                        Median(_consoleWithStorage);
+                        Median(consoleWithStorage);
                         break;
                     case "help":
-                        Help(_consoleWithStorage);
+                        Help(consoleWithStorage);
                         break;
                     case "rand":
-                        x = Random(_consoleWithStorage, x);
-                        _consoleWithStorage.ChangeCurrentRandomValueTo(x);
+                        x = Random(consoleWithStorage, x);
+                        consoleWithStorage.ChangeCurrentRandomValueTo(x);
                         break;
                     default:
-                        _consoleWithStorage.WriteLine("Такой команды нет, используйте help для списка команд");
+                        consoleWithStorage.WriteLine("Такой команды нет, используйте help для списка команд");
                         break;
                 }
 
-                _consoleWithStorage.CurrentCommandIsDone();
+                consoleWithStorage.CurrentCommandIsDone();
             }
         }
 
@@ -83,7 +82,6 @@ namespace CommandLineCalculator
         {
             const int a = 16807;
             const int m = 2147483647;
-
 
             var count = ReadNumber(console);
             for (var i = 0; i < count; i++)
@@ -142,22 +140,29 @@ namespace CommandLineCalculator
             private readonly Storage _storage;
 
             private int _currentLine = 1;
-            
-            private byte[] StorageBytes => _storage.Read();
-            private List<string> StorageLines => UTF8.GetString(StorageBytes).Trim()
-                .Split('\n').Where(line => !string.IsNullOrEmpty(line)).ToList();
 
+            private byte[] _storageBytes;
+
+            private List<string> _storageLines;
+
+            private void RewriteStorageLines()
+            {
+                _storageLines = UTF8.GetString(_storageBytes).Trim()
+                    .Split('\n').Where(line => !string.IsNullOrEmpty(line)).ToList();
+            }
+            
             public ConsoleWithStorage(UserConsole console, Storage storage)
             {
                 _console = console;
                 _storage = storage;
-
+                _storageBytes = storage.Read();
+                RewriteStorageLines();
                 InitializeStorageIfEmpty();
             }
 
             private void InitializeStorageIfEmpty()
             {
-                if (StorageBytes == null || StorageBytes.Length == 0)
+                if (_storageBytes == null || _storageBytes.Length == 0)
                 {
                     const long firstRandomValue = 420L;
                     AddToStorage(firstRandomValue);
@@ -167,7 +172,9 @@ namespace CommandLineCalculator
             private void AddToStorage(string value)
             {
                 var valueBytes = UTF8.GetBytes($"{value}\n");
-                _storage.Write(StorageBytes.Concat(valueBytes).ToArray());
+                _storage.Write(_storageBytes.Concat(valueBytes).ToArray());
+                _storageBytes = _storage.Read();
+                RewriteStorageLines();
             }
 
             private void AddToStorage(long value)
@@ -178,9 +185,9 @@ namespace CommandLineCalculator
             public override string ReadLine()
             {
                 string readLine;
-                if (_currentLine < StorageLines.Count)
+                if (_currentLine < _storageLines.Count)
                 {
-                    readLine = StorageLines[_currentLine];
+                    readLine = _storageLines[_currentLine];
                 }
                 else
                 {
@@ -196,14 +203,15 @@ namespace CommandLineCalculator
             public void ChangeCurrentRandomValueTo(long nextRandomValue)
             {
                 var randomValueBytes = UTF8.GetBytes($"{nextRandomValue}\n");
-                var currentCommandBytes = UTF8.GetBytes(string.Join("\n", StorageLines.Skip(1)) + "\n");
+                var currentCommandBytes = UTF8.GetBytes(string.Join("\n", _storageLines.Skip(1)) + "\n");
                 _storage.Write(randomValueBytes.Concat(currentCommandBytes).ToArray());
+                _storageBytes = _storage.Read();
+                RewriteStorageLines();
             }
 
             public override void WriteLine(string content)
             {
-                //если в текущей строке ничего нет, то пишем, иначе не пишем
-                if (_currentLine >= StorageLines.Count())
+                if (_currentLine == _storageLines.Count)
                 {
                     _console.WriteLine(content);
                     AddToStorage(content);
@@ -214,9 +222,11 @@ namespace CommandLineCalculator
 
             private void ClearStorageAndWriteNextRandom()
             {
-                var nextRandomValue = StorageLines[0];
+                var nextRandomValue = _storageLines[0];
                 _storage.Write(Array.Empty<byte>());
                 _storage.Write(UTF8.GetBytes($"{nextRandomValue}\n"));
+                _storageBytes = _storage.Read();
+                RewriteStorageLines();
             }
 
             public void CurrentCommandIsDone()
@@ -227,7 +237,7 @@ namespace CommandLineCalculator
 
             public long GetNextRandom()
             {
-                return System.Convert.ToInt64(StorageLines[0]);
+                return System.Convert.ToInt64(_storageLines[0]);
             }
         }
     }
