@@ -145,12 +145,6 @@ namespace CommandLineCalculator
 
             private List<string> _storageLines;
 
-            private void RewriteStorageLines()
-            {
-                _storageLines = UTF8.GetString(_storageBytes).Trim()
-                    .Split('\n').Where(line => !string.IsNullOrEmpty(line)).ToList();
-            }
-            
             public ConsoleWithStorage(UserConsole console, Storage storage)
             {
                 _console = console;
@@ -158,6 +152,12 @@ namespace CommandLineCalculator
                 _storageBytes = storage.Read();
                 RewriteStorageLines();
                 InitializeStorageIfEmpty();
+            }
+
+            private void RewriteStorageLines()
+            {
+                _storageLines = UTF8.GetString(_storageBytes).Trim()
+                    .Split('\n').Where(line => !string.IsNullOrEmpty(line)).ToList();
             }
 
             private void InitializeStorageIfEmpty()
@@ -169,17 +169,15 @@ namespace CommandLineCalculator
                 }
             }
 
-            private void AddToStorage(string value)
+            public long GetNextRandom()
             {
-                var valueBytes = UTF8.GetBytes($"{value}\n");
-                _storage.Write(_storageBytes.Concat(valueBytes).ToArray());
-                _storageBytes = _storage.Read();
-                RewriteStorageLines();
+                return System.Convert.ToInt64(_storageLines[0]);
             }
 
-            private void AddToStorage(long value)
+            public void CurrentCommandIsDone()
             {
-                AddToStorage(value.ToString(Culture));
+                _currentLine = 1;
+                ClearStorageAndWriteNextRandom();
             }
 
             public override string ReadLine()
@@ -204,8 +202,9 @@ namespace CommandLineCalculator
             {
                 var randomValueBytes = UTF8.GetBytes($"{nextRandomValue}\n");
                 var currentCommandBytes = UTF8.GetBytes(string.Join("\n", _storageLines.Skip(1)) + "\n");
-                _storage.Write(randomValueBytes.Concat(currentCommandBytes).ToArray());
-                _storageBytes = _storage.Read();
+                var bytesWithNextRandomValue = randomValueBytes.Concat(currentCommandBytes).ToArray();
+                _storage.Write(bytesWithNextRandomValue);
+                _storageBytes = bytesWithNextRandomValue;
                 RewriteStorageLines();
             }
 
@@ -220,24 +219,29 @@ namespace CommandLineCalculator
                 _currentLine++;
             }
 
-            private void ClearStorageAndWriteNextRandom()
+            private void AddToStorage(long value)
             {
-                var nextRandomValue = _storageLines[0];
-                _storage.Write(Array.Empty<byte>());
-                _storage.Write(UTF8.GetBytes($"{nextRandomValue}\n"));
-                _storageBytes = _storage.Read();
+                AddToStorage(value.ToString(Culture));
+            }
+
+            private void AddToStorage(string value)
+            {
+                var valueBytes = UTF8.GetBytes($"{value}\n");
+                var bytesWithNewValue = _storageBytes.Concat(valueBytes).ToArray();
+                _storage.Write(bytesWithNewValue);
+                _storageBytes = bytesWithNewValue;
                 RewriteStorageLines();
             }
 
-            public void CurrentCommandIsDone()
-            {
-                _currentLine = 1;
-                ClearStorageAndWriteNextRandom();
-            }
 
-            public long GetNextRandom()
+            private void ClearStorageAndWriteNextRandom()
             {
-                return System.Convert.ToInt64(_storageLines[0]);
+                var nextRandomValue = GetNextRandom();
+                _storage.Write(Array.Empty<byte>());
+                var nextRandomValueBytes = UTF8.GetBytes($"{nextRandomValue}\n");
+                _storage.Write(nextRandomValueBytes);
+                _storageBytes = nextRandomValueBytes;
+                RewriteStorageLines();
             }
         }
     }
