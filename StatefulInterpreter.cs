@@ -14,7 +14,7 @@ namespace CommandLineCalculator
         {
             var consoleWithStorage = new ConsoleWithStorage(userConsole, storage);
 
-            var x = consoleWithStorage.GetNextRandom();
+            var nextRandomValue = consoleWithStorage.GetNextRandom();
 
             while (true)
             {
@@ -33,15 +33,15 @@ namespace CommandLineCalculator
                         Help(consoleWithStorage);
                         break;
                     case "rand":
-                        x = Random(consoleWithStorage, x);
-                        consoleWithStorage.ChangeCurrentRandomValueTo(x);
+                        nextRandomValue = Random(consoleWithStorage, nextRandomValue);
+                        consoleWithStorage.ChangeCurrentRandomValueTo(nextRandomValue);
                         break;
                     default:
                         consoleWithStorage.WriteLine("Такой команды нет, используйте help для списка команд");
                         break;
                 }
 
-                consoleWithStorage.CurrentCommandIsDone();
+                consoleWithStorage.PrepareForNextCommand();
             }
         }
 
@@ -139,29 +139,20 @@ namespace CommandLineCalculator
             private readonly UserConsole _console;
             private readonly Storage _storage;
 
+            private byte[] _storageBytes;
+            private string[] _storageLines;
             private int _currentLine = 1;
 
-            private byte[] _storageBytes;
-
-            private List<string> _storageLines;
+            private const char StorageLinesSeparator = '\n';
 
             public ConsoleWithStorage(UserConsole console, Storage storage)
             {
                 _console = console;
                 _storage = storage;
-                _storageBytes = storage.Read();
-                RewriteStorageLines();
-                InitializeStorageIfEmpty();
-            }
 
-            private void RewriteStorageLines()
-            {
-                _storageLines = UTF8.GetString(_storageBytes).Trim()
-                    .Split('\n').Where(line => !string.IsNullOrEmpty(line)).ToList();
-            }
+                var storageContent = _storage.Read();
+                RewriteStorageBuffersFor(storageContent);
 
-            private void InitializeStorageIfEmpty()
-            {
                 if (_storageBytes == null || _storageBytes.Length == 0)
                 {
                     const long firstRandomValue = 420L;
@@ -169,21 +160,32 @@ namespace CommandLineCalculator
                 }
             }
 
-            public long GetNextRandom()
+            private void RewriteStorageBuffersFor(byte[] newBytes)
             {
-                return System.Convert.ToInt64(_storageLines[0]);
+                _storageBytes = newBytes;
+                _storageLines = UTF8.GetString(_storageBytes).Trim().Split(StorageLinesSeparator)
+                    .Where(line => !string.IsNullOrEmpty(line)).ToArray();
             }
 
-            public void CurrentCommandIsDone()
+            private void AddToStorage(long value)
             {
-                _currentLine = 1;
-                ClearStorageAndWriteNextRandom();
+                AddToStorage(value.ToString(Culture));
+            }
+
+            private void AddToStorage(string value)
+            {
+                var valueBytes = UTF8.GetBytes($"{value}{StorageLinesSeparator}");
+
+                var bytesWithNewValue = _storageBytes.Concat(valueBytes).ToArray();
+
+                _storage.Write(bytesWithNewValue);
+                RewriteStorageBuffersFor(bytesWithNewValue);
             }
 
             public override string ReadLine()
             {
                 string readLine;
-                if (_currentLine < _storageLines.Count)
+                if (_currentLine < _storageLines.Length)
                 {
                     readLine = _storageLines[_currentLine];
                 }
@@ -198,19 +200,12 @@ namespace CommandLineCalculator
                 return readLine;
             }
 
-            public void ChangeCurrentRandomValueTo(long nextRandomValue)
-            {
-                var randomValueBytes = UTF8.GetBytes($"{nextRandomValue}\n");
-                var currentCommandBytes = UTF8.GetBytes(string.Join("\n", _storageLines.Skip(1)) + "\n");
-                var bytesWithNextRandomValue = randomValueBytes.Concat(currentCommandBytes).ToArray();
-                _storage.Write(bytesWithNextRandomValue);
-                _storageBytes = bytesWithNextRandomValue;
-                RewriteStorageLines();
-            }
-
             public override void WriteLine(string content)
             {
-                if (_currentLine == _storageLines.Count)
+                var lastIndexOfStorageLines = _storageLines.Length - 1;
+                var isCurrentLineOutsideOfStorageLines = _currentLine > lastIndexOfStorageLines;
+
+                if (isCurrentLineOutsideOfStorageLines)
                 {
                     _console.WriteLine(content);
                     AddToStorage(content);
@@ -219,29 +214,53 @@ namespace CommandLineCalculator
                 _currentLine++;
             }
 
-            private void AddToStorage(long value)
+            public long GetNextRandom()
             {
-                AddToStorage(value.ToString(Culture));
+                return System.Convert.ToInt64(_storageLines[0]);
             }
 
-            private void AddToStorage(string value)
+            public void PrepareForNextCommand()
             {
-                var valueBytes = UTF8.GetBytes($"{value}\n");
-                var bytesWithNewValue = _storageBytes.Concat(valueBytes).ToArray();
-                _storage.Write(bytesWithNewValue);
-                _storageBytes = bytesWithNewValue;
-                RewriteStorageLines();
+                _currentLine = 1;
+                ClearStorageAndWriteNextRandom();
+
+                void ClearStorageAndWriteNextRandom()
+                {
+                    var nextRandomValue = GetNextRandom();
+
+                    _storage.Write(Array.Empty<byte>());
+
+                    var nextRandomValueBytes = UTF8.GetBytes($"{nextRandomValue}{StorageLinesSeparator}");
+
+                    _storage.Write(nextRandomValueBytes);
+                    RewriteStorageBuffersFor(nextRandomValueBytes);
+                }
             }
 
-
-            private void ClearStorageAndWriteNextRandom()
+            public void ChangeCurrentRandomValueTo(long nextRandomValue)
             {
-                var nextRandomValue = GetNextRandom();
-                _storage.Write(Array.Empty<byte>());
-                var nextRandomValueBytes = UTF8.GetBytes($"{nextRandomValue}\n");
-                _storage.Write(nextRandomValueBytes);
-                _storageBytes = nextRandomValueBytes;
-                RewriteStorageLines();
+                var nextRandomValueBytes = UTF8.GetBytes($"{nextRandomValue}{StorageLinesSeparator}");
+
+                var storageBytesExceptCurrentRandom = GetStorageBytesExceptCurrentRandom();
+
+                var bytesWithNextRandomValue = nextRandomValueBytes.Concat(storageBytesExceptCurrentRandom).ToArray();
+
+                _storage.Write(bytesWithNextRandomValue);
+                RewriteStorageBuffersFor(bytesWithNextRandomValue);
+
+                
+                byte[] GetStorageBytesExceptCurrentRandom()
+                {
+                    var separatorAsSting = StorageLinesSeparator.ToString(Culture);
+
+                    var storageLinesExceptCurrentRandom = _storageLines.Skip(1);
+                    
+                    var joinedStorageLinesExceptCurrentRandom =
+                        string.Join(separatorAsSting, storageLinesExceptCurrentRandom)
+                        + StorageLinesSeparator;
+                    
+                    return UTF8.GetBytes(joinedStorageLinesExceptCurrentRandom);
+                }
             }
         }
     }
