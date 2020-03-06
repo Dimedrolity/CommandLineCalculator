@@ -8,8 +8,9 @@ namespace CommandLineCalculator
         public static void Main()
         {
             var console = new TextUserConsole(Console.In, Console.Out);
-            var storage = new FileStorage("213");
+            var storage = new FileStorage("TestForRunExitRun");
             var interpreter = new StatefulInterpreter();
+            interpreter.Run(console, storage);
             interpreter.Run(console, storage);
         }
     }

@@ -22,6 +22,7 @@ namespace CommandLineCalculator
                 switch (input.Trim())
                 {
                     case "exit":
+                        consoleWithStorage.ClearStorage();
                         return;
                     case "add":
                         Add(consoleWithStorage);
@@ -228,7 +229,7 @@ namespace CommandLineCalculator
                 {
                     var nextRandomValue = GetNextRandom();
 
-                    _storage.Write(Array.Empty<byte>());
+                    ClearStorage();
 
                     var nextRandomValueBytes = UTF8.GetBytes($"{nextRandomValue}{StorageLinesSeparator}");
 
@@ -237,6 +238,11 @@ namespace CommandLineCalculator
                 }
             }
 
+            public void ClearStorage()
+            {
+                _storage.Write(Array.Empty<byte>());
+            }
+            
             public void ChangeCurrentRandomValueTo(long nextRandomValue)
             {
                 var nextRandomValueBytes = UTF8.GetBytes($"{nextRandomValue}{StorageLinesSeparator}");
