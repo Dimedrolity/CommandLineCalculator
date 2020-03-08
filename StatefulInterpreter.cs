@@ -154,7 +154,8 @@ namespace CommandLineCalculator
                 var storageContent = _storage.Read();
                 RewriteStorageBuffersFor(storageContent);
 
-                if (_storageBytes == null || _storageBytes.Length == 0)
+                var isStorageEmpty = storageContent == null || storageContent.Length == 0;
+                if (isStorageEmpty)
                 {
                     const long firstRandomValue = 420L;
                     AddToStorage(firstRandomValue);
@@ -242,7 +243,7 @@ namespace CommandLineCalculator
             {
                 _storage.Write(Array.Empty<byte>());
             }
-            
+
             public void ChangeCurrentRandomValueTo(long nextRandomValue)
             {
                 var nextRandomValueBytes = UTF8.GetBytes($"{nextRandomValue}{StorageLinesSeparator}");
@@ -254,17 +255,17 @@ namespace CommandLineCalculator
                 _storage.Write(bytesWithNextRandomValue);
                 RewriteStorageBuffersFor(bytesWithNextRandomValue);
 
-                
+
                 byte[] GetStorageBytesExceptCurrentRandom()
                 {
                     var separatorAsSting = StorageLinesSeparator.ToString(Culture);
 
                     var storageLinesExceptCurrentRandom = _storageLines.Skip(1);
-                    
+
                     var joinedStorageLinesExceptCurrentRandom =
                         string.Join(separatorAsSting, storageLinesExceptCurrentRandom)
                         + StorageLinesSeparator;
-                    
+
                     return UTF8.GetBytes(joinedStorageLinesExceptCurrentRandom);
                 }
             }
