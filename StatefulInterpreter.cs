@@ -165,8 +165,8 @@ namespace CommandLineCalculator
             private void RewriteStorageBuffersFor(byte[] newBytes)
             {
                 _storageBytes = newBytes;
-                _storageLines = UTF8.GetString(_storageBytes).Trim().Split(StorageLinesSeparator)
-                    .Where(line => !string.IsNullOrEmpty(line)).ToArray();
+                _storageLines = UTF8.GetString(_storageBytes)
+                    .Split(new[] {StorageLinesSeparator}, StringSplitOptions.RemoveEmptyEntries);
             }
 
             private void AddToStorage(long value)
@@ -178,7 +178,7 @@ namespace CommandLineCalculator
             {
                 var valueBytes = UTF8.GetBytes($"{value}{StorageLinesSeparator}");
 
-                var bytesWithNewValue = _storageBytes.Concat(valueBytes).ToArray();
+                var bytesWithNewValue = _storageBytes.Concatenate(valueBytes);
 
                 _storage.Write(bytesWithNewValue);
                 RewriteStorageBuffersFor(bytesWithNewValue);
@@ -224,19 +224,15 @@ namespace CommandLineCalculator
             public void PrepareForNextCommand()
             {
                 _currentLine = 1;
-                ClearStorageAndWriteNextRandom();
 
-                void ClearStorageAndWriteNextRandom()
-                {
-                    var nextRandomValue = GetNextRandom();
+                var nextRandomValue = GetNextRandom();
 
-                    ClearStorage();
+                ClearStorage();
 
-                    var nextRandomValueBytes = UTF8.GetBytes($"{nextRandomValue}{StorageLinesSeparator}");
+                var nextRandomValueBytes = UTF8.GetBytes($"{nextRandomValue}{StorageLinesSeparator}");
 
-                    _storage.Write(nextRandomValueBytes);
-                    RewriteStorageBuffersFor(nextRandomValueBytes);
-                }
+                _storage.Write(nextRandomValueBytes);
+                RewriteStorageBuffersFor(nextRandomValueBytes);
             }
 
             public void ClearStorage()
@@ -248,27 +244,28 @@ namespace CommandLineCalculator
             {
                 var nextRandomValueBytes = UTF8.GetBytes($"{nextRandomValue}{StorageLinesSeparator}");
 
-                var storageBytesExceptCurrentRandom = GetStorageBytesExceptCurrentRandom();
+                var separatorAsSting = StorageLinesSeparator.ToString(Culture);
+                var storageLinesExceptCurrentRandom = _storageLines.Skip(1);
+                var joinedStorageLinesExceptCurrentRandom =
+                    string.Join(separatorAsSting, storageLinesExceptCurrentRandom) + StorageLinesSeparator;
+                var storageBytesExceptCurrentRandom = UTF8.GetBytes(joinedStorageLinesExceptCurrentRandom);
 
-                var bytesWithNextRandomValue = nextRandomValueBytes.Concat(storageBytesExceptCurrentRandom).ToArray();
-
+                var bytesWithNextRandomValue = nextRandomValueBytes.Concatenate(storageBytesExceptCurrentRandom);
+                
                 _storage.Write(bytesWithNextRandomValue);
                 RewriteStorageBuffersFor(bytesWithNextRandomValue);
-
-
-                byte[] GetStorageBytesExceptCurrentRandom()
-                {
-                    var separatorAsSting = StorageLinesSeparator.ToString(Culture);
-
-                    var storageLinesExceptCurrentRandom = _storageLines.Skip(1);
-
-                    var joinedStorageLinesExceptCurrentRandom =
-                        string.Join(separatorAsSting, storageLinesExceptCurrentRandom)
-                        + StorageLinesSeparator;
-
-                    return UTF8.GetBytes(joinedStorageLinesExceptCurrentRandom);
-                }
             }
+        }
+    }
+
+    public static class Extensions
+    {
+        public static byte[] Concatenate(this byte[] thisArray, byte[] thatArray)
+        {
+            var concatenate = new byte[thisArray.Length + thatArray.Length];
+            thisArray.CopyTo(concatenate, 0);
+            thatArray.CopyTo(concatenate, thisArray.Length);
+            return concatenate;
         }
     }
 }
