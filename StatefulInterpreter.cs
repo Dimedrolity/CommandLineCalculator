@@ -152,12 +152,12 @@ namespace CommandLineCalculator
                 _console = console;
                 _storage = storage;
                 _storageBytes = _storage.Read();
-                
+
                 var storageLines = UTF8.GetString(_storageBytes)
                     .Split(new[] {StorageLinesSeparator}, StringSplitOptions.RemoveEmptyEntries);
-                
+
                 _unusedStorageLines = new LinkedList<string>(storageLines);
-                
+
                 var isStorageEmpty = _storageBytes == null || _storageBytes.Length == 0;
                 if (isStorageEmpty)
                 {
@@ -206,14 +206,14 @@ namespace CommandLineCalculator
 
             public override void WriteLine(string content)
             {
-                if (_unusedStorageLines.Count == 0)
+                if (_unusedStorageLines.Count != 0)
                 {
-                    _console.WriteLine(content);
-                    AddToStorage(content);
+                    _unusedStorageLines.RemoveFirst();
                 }
                 else
                 {
-                    _unusedStorageLines.RemoveFirst();
+                    _console.WriteLine(content);
+                    AddToStorage(content);
                 }
             }
 
@@ -227,7 +227,7 @@ namespace CommandLineCalculator
                 var nextRandomValueBytes = UTF8.GetBytes($"{_nextRandomValue}{StorageLinesSeparator}");
 
                 ClearStorage();
-                
+
                 _storage.Write(nextRandomValueBytes);
                 _storageBytes = nextRandomValueBytes;
             }
@@ -243,7 +243,7 @@ namespace CommandLineCalculator
                 var nextRandomValueBytes = UTF8.GetBytes($"{nextRandomValue}{StorageLinesSeparator}");
 
                 var separatorAsSting = StorageLinesSeparator.ToString(Culture);
-                var storageLinesExceptCurrentRandom = _unusedStorageLines.Skip(1);
+                var storageLinesExceptCurrentRandom = _unusedStorageLines.Skip(1); //проверить
                 var joinedStorageLinesExceptCurrentRandom =
                     string.Join(separatorAsSting, storageLinesExceptCurrentRandom) + StorageLinesSeparator;
                 var storageBytesExceptCurrentRandom = UTF8.GetBytes(joinedStorageLinesExceptCurrentRandom);
