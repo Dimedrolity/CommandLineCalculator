@@ -166,7 +166,8 @@ namespace CommandLineCalculator
                 }
                 else
                 {
-                    _nextRandomValue = System.Convert.ToInt64(_remainingStorageLines.Dequeue());
+                    var nextRandomValue = _remainingStorageLines.Dequeue();
+                    _nextRandomValue = System.Convert.ToInt64(nextRandomValue);
                 }
             }
 
