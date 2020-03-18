@@ -142,7 +142,7 @@ namespace CommandLineCalculator
             private byte[] _storageBytes;
 
             private readonly long _nextRandomValue;
-            private readonly LinkedList<string> _unusedStorageLines;
+            private readonly Queue<string> _remainingStorageLines;
 
             private const char StorageLinesSeparator = '\n';
 
@@ -155,7 +155,7 @@ namespace CommandLineCalculator
                 var storageLines = UTF8.GetString(_storageBytes)
                     .Split(new[] {StorageLinesSeparator}, StringSplitOptions.RemoveEmptyEntries);
 
-                _unusedStorageLines = new LinkedList<string>(storageLines);
+                _remainingStorageLines = new Queue<string>(storageLines);
 
                 var isStorageEmpty = _storageBytes == null || _storageBytes.Length == 0;
                 if (isStorageEmpty)
@@ -166,8 +166,7 @@ namespace CommandLineCalculator
                 }
                 else
                 {
-                    _nextRandomValue = System.Convert.ToInt64(_unusedStorageLines.First.Value);
-                    _unusedStorageLines.RemoveFirst();
+                    _nextRandomValue = System.Convert.ToInt64(_remainingStorageLines.Dequeue());
                 }
             }
 
@@ -189,10 +188,9 @@ namespace CommandLineCalculator
             public override string ReadLine()
             {
                 string readLine;
-                if (_unusedStorageLines.Count != 0)
+                if (_remainingStorageLines.Count != 0)
                 {
-                    readLine = _unusedStorageLines.First.Value;
-                    _unusedStorageLines.RemoveFirst();
+                    readLine = _remainingStorageLines.Dequeue();
                 }
                 else
                 {
@@ -205,9 +203,9 @@ namespace CommandLineCalculator
 
             public override void WriteLine(string content)
             {
-                if (_unusedStorageLines.Count != 0)
+                if (_remainingStorageLines.Count != 0)
                 {
-                    _unusedStorageLines.RemoveFirst();
+                    _remainingStorageLines.Dequeue();
                 }
                 else
                 {
