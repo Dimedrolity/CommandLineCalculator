@@ -143,7 +143,7 @@ namespace CommandLineCalculator
             private byte[] _storageBytes;
 
             private long _nextRandomValue;
-            private LinkedList<string> _unusedStorageLines;
+            private readonly LinkedList<string> _unusedStorageLines;
 
             private const char StorageLinesSeparator = '\n';
 
@@ -151,11 +151,14 @@ namespace CommandLineCalculator
             {
                 _console = console;
                 _storage = storage;
-
-                var storageContent = _storage.Read();
-                RewriteStorageBuffersFor(storageContent);
-
-                var isStorageEmpty = storageContent == null || storageContent.Length == 0;
+                _storageBytes = _storage.Read();
+                
+                var storageLines = UTF8.GetString(_storageBytes)
+                    .Split(new[] {StorageLinesSeparator}, StringSplitOptions.RemoveEmptyEntries);
+                
+                _unusedStorageLines = new LinkedList<string>(storageLines);
+                
+                var isStorageEmpty = _storageBytes == null || _storageBytes.Length == 0;
                 if (isStorageEmpty)
                 {
                     const long firstRandomValue = 420L;
@@ -167,16 +170,6 @@ namespace CommandLineCalculator
                     _nextRandomValue = System.Convert.ToInt64(_unusedStorageLines.First.Value);
                     _unusedStorageLines.RemoveFirst();
                 }
-            }
-
-            private void RewriteStorageBuffersFor(byte[] newBytes)
-            {
-                _storageBytes = newBytes;
-
-                var storageLines = UTF8.GetString(_storageBytes)
-                    .Split(new[] {StorageLinesSeparator}, StringSplitOptions.RemoveEmptyEntries);
-
-                _unusedStorageLines = new LinkedList<string>(storageLines);
             }
 
             private void AddToStorage(long value)
