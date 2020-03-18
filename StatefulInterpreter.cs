@@ -138,11 +138,12 @@ namespace CommandLineCalculator
         private class ConsoleWithStorage : UserConsole
         {
             private readonly UserConsole _console;
-            private readonly Storage _storage;
 
+            private readonly Storage _storage;
             private byte[] _storageBytes;
-            private string[] _storageLines;
-            private int _currentLine = 1;
+
+            private long _nextRandomValue;
+            private LinkedList<string> _unusedStorageLines;
 
             private const char StorageLinesSeparator = '\n';
 
@@ -159,14 +160,23 @@ namespace CommandLineCalculator
                 {
                     const long firstRandomValue = 420L;
                     AddToStorage(firstRandomValue);
+                    _nextRandomValue = firstRandomValue;
+                }
+                else
+                {
+                    _nextRandomValue = System.Convert.ToInt64(_unusedStorageLines.First.Value);
+                    _unusedStorageLines.RemoveFirst();
                 }
             }
 
             private void RewriteStorageBuffersFor(byte[] newBytes)
             {
                 _storageBytes = newBytes;
-                _storageLines = UTF8.GetString(_storageBytes)
+
+                var storageLines = UTF8.GetString(_storageBytes)
                     .Split(new[] {StorageLinesSeparator}, StringSplitOptions.RemoveEmptyEntries);
+
+                _unusedStorageLines = new LinkedList<string>(storageLines);
             }
 
             private void AddToStorage(long value)
@@ -181,15 +191,16 @@ namespace CommandLineCalculator
                 var bytesWithNewValue = _storageBytes.Concatenate(valueBytes);
 
                 _storage.Write(bytesWithNewValue);
-                RewriteStorageBuffersFor(bytesWithNewValue);
+                _storageBytes = bytesWithNewValue;
             }
 
             public override string ReadLine()
             {
                 string readLine;
-                if (_currentLine < _storageLines.Length)
+                if (_unusedStorageLines.Count != 0)
                 {
-                    readLine = _storageLines[_currentLine];
+                    readLine = _unusedStorageLines.First.Value;
+                    _unusedStorageLines.RemoveFirst();
                 }
                 else
                 {
@@ -197,42 +208,35 @@ namespace CommandLineCalculator
                     AddToStorage(readLine);
                 }
 
-                _currentLine++;
-
                 return readLine;
             }
 
             public override void WriteLine(string content)
             {
-                var lastIndexOfStorageLines = _storageLines.Length - 1;
-                var isCurrentLineOutsideOfStorageLines = _currentLine > lastIndexOfStorageLines;
-
-                if (isCurrentLineOutsideOfStorageLines)
+                if (_unusedStorageLines.Count == 0)
                 {
                     _console.WriteLine(content);
                     AddToStorage(content);
                 }
-
-                _currentLine++;
+                else
+                {
+                    _unusedStorageLines.RemoveFirst();
+                }
             }
 
             public long GetNextRandom()
             {
-                return System.Convert.ToInt64(_storageLines[0]);
+                return _nextRandomValue;
             }
 
             public void PrepareForNextCommand()
             {
-                _currentLine = 1;
-
-                var nextRandomValue = GetNextRandom();
+                var nextRandomValueBytes = UTF8.GetBytes($"{_nextRandomValue}{StorageLinesSeparator}");
 
                 ClearStorage();
-
-                var nextRandomValueBytes = UTF8.GetBytes($"{nextRandomValue}{StorageLinesSeparator}");
-
+                
                 _storage.Write(nextRandomValueBytes);
-                RewriteStorageBuffersFor(nextRandomValueBytes);
+                _storageBytes = nextRandomValueBytes;
             }
 
             public void ClearStorage()
@@ -242,18 +246,19 @@ namespace CommandLineCalculator
 
             public void ChangeCurrentRandomValueTo(long nextRandomValue)
             {
+                _nextRandomValue = nextRandomValue;
                 var nextRandomValueBytes = UTF8.GetBytes($"{nextRandomValue}{StorageLinesSeparator}");
 
                 var separatorAsSting = StorageLinesSeparator.ToString(Culture);
-                var storageLinesExceptCurrentRandom = _storageLines.Skip(1);
+                var storageLinesExceptCurrentRandom = _unusedStorageLines.Skip(1);
                 var joinedStorageLinesExceptCurrentRandom =
                     string.Join(separatorAsSting, storageLinesExceptCurrentRandom) + StorageLinesSeparator;
                 var storageBytesExceptCurrentRandom = UTF8.GetBytes(joinedStorageLinesExceptCurrentRandom);
 
                 var bytesWithNextRandomValue = nextRandomValueBytes.Concatenate(storageBytesExceptCurrentRandom);
-                
+
                 _storage.Write(bytesWithNextRandomValue);
-                RewriteStorageBuffersFor(bytesWithNextRandomValue);
+                _storageBytes = bytesWithNextRandomValue;
             }
         }
     }
