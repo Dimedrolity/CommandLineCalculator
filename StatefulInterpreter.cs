@@ -180,7 +180,7 @@ namespace CommandLineCalculator
             {
                 var valueBytes = UTF8.GetBytes($"{value}{StorageLinesSeparator}");
 
-                var bytesWithNewValue = _storageBytes.Concatenate(valueBytes);
+                var bytesWithNewValue = _storageBytes.Concat(valueBytes).ToArray();
 
                 _storage.Write(bytesWithNewValue);
                 _storageBytes = bytesWithNewValue;
@@ -232,17 +232,6 @@ namespace CommandLineCalculator
                 _storage.Write(nextRandomValueBytes);
                 _storageBytes = nextRandomValueBytes;
             }
-        }
-    }
-
-    public static class Extensions
-    {
-        public static byte[] Concatenate(this byte[] thisArray, byte[] thatArray)
-        {
-            var concatenate = new byte[thisArray.Length + thatArray.Length];
-            thisArray.CopyTo(concatenate, 0);
-            thatArray.CopyTo(concatenate, thisArray.Length);
-            return concatenate;
         }
     }
 }
