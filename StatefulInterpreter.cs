@@ -142,7 +142,8 @@ namespace CommandLineCalculator
             private byte[] _storageBytes;
 
             private readonly long _nextRandomValue;
-            private readonly Queue<string> _remainingStorageLines;
+            
+            private readonly Queue<string> _unusedStorageLines;
 
             private const char StorageLinesSeparator = '\n';
 
@@ -155,7 +156,7 @@ namespace CommandLineCalculator
                 var storageLines = UTF8.GetString(_storageBytes)
                     .Split(new[] {StorageLinesSeparator}, StringSplitOptions.RemoveEmptyEntries);
 
-                _remainingStorageLines = new Queue<string>(storageLines);
+                _unusedStorageLines = new Queue<string>(storageLines);
 
                 var isStorageEmpty = _storageBytes == null || _storageBytes.Length == 0;
                 if (isStorageEmpty)
@@ -166,7 +167,7 @@ namespace CommandLineCalculator
                 }
                 else
                 {
-                    var nextRandomValue = _remainingStorageLines.Dequeue();
+                    var nextRandomValue = _unusedStorageLines.Dequeue();
                     _nextRandomValue = System.Convert.ToInt64(nextRandomValue);
                 }
             }
@@ -189,9 +190,9 @@ namespace CommandLineCalculator
             public override string ReadLine()
             {
                 string readLine;
-                if (_remainingStorageLines.Count != 0)
+                if (_unusedStorageLines.Count != 0)
                 {
-                    readLine = _remainingStorageLines.Dequeue();
+                    readLine = _unusedStorageLines.Dequeue();
                 }
                 else
                 {
@@ -204,9 +205,9 @@ namespace CommandLineCalculator
 
             public override void WriteLine(string content)
             {
-                if (_remainingStorageLines.Count != 0)
+                if (_unusedStorageLines.Count != 0)
                 {
-                    _remainingStorageLines.Dequeue();
+                    _unusedStorageLines.Dequeue();
                 }
                 else
                 {
@@ -228,7 +229,7 @@ namespace CommandLineCalculator
             public void ClearStorageAndWriteNextRandomValue(long nextRandomValue)
             {
                 var nextRandomValueBytes = UTF8.GetBytes($"{nextRandomValue}{StorageLinesSeparator}");
-
+                
                 _storage.Write(nextRandomValueBytes);
                 _storageBytes = nextRandomValueBytes;
             }
