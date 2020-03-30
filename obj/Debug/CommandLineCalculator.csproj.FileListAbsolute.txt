@@ -28,3 +28,4 @@ D:\Учёба\Тестовые на стажировку C# Контур\Кал�
 D:\Учёба\Тестовые на стажировку C# Контур\Калькулятор\CommandLineCalculator.csproj (1)\obj\Debug\CommandLineCalculator.csproj.CopyComplete
 D:\Учёба\Тестовые на стажировку C# Контур\Калькулятор\CommandLineCalculator.csproj (1)\obj\Debug\CommandLineCalculator.dll
 D:\Учёба\Тестовые на стажировку C# Контур\Калькулятор\CommandLineCalculator.csproj (1)\obj\Debug\CommandLineCalculator.pdb
+D:\Учёба\Тестовые на стажировку C# Контур\Калькулятор\CommandLineCalculator.csproj (1)\obj\Debug\CommandLineCalculator.csproj.CoreCompileInputs.cache

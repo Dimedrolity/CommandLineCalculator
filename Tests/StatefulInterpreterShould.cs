@@ -196,16 +196,6 @@ namespace CommandLineCalculator.Tests
             ).SetName("add"),
             new TestCaseData(
                 new TestConsole(
-                    (Read, "add"),
-                    (Read, "15"),
-                    (Read, "60"),
-                    (Write, "75"),
-                    (Read, "exit")
-                ),
-                new[] {0, 2, 4, 6, 8}
-            ).SetName("addMy"),
-            new TestCaseData(
-                new TestConsole(
                     (Read, "median"),
                     (Read, "3"),
                     (Read, "60"),
@@ -226,16 +216,6 @@ namespace CommandLineCalculator.Tests
                 ),
                 new[] {0, 2, 4, 6, 8}
             ).SetName("rand"),
-            new TestCaseData(
-                new TestConsole(
-                    (Read, "rand"),
-                    (Read, "2"),
-                    (Write, "420"),
-                    (Write, "7058940"),
-                    (Read, "exit")
-                ),
-                new[] {0, 2, 4, 6, 8}
-            ).SetName("myRand"),
             new TestCaseData(
                 new TestConsole(
                     (Read, "rand"),
@@ -275,29 +255,7 @@ namespace CommandLineCalculator.Tests
                     (Read, "exit")
                 ),
                 new[] {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32}
-            ).SetName("my rand median rand break 4"),
-            new TestCaseData(
-                new TestConsole(
-                    (Read, "rand"),
-                    (Read, "3"),
-                    (Write, "420"),
-                    (Write, "7058940"),
-                    (Write, "528003995"),
-                    (Read, "median"),
-                    (Read, "3"),
-                    (Read, "60"),
-                    (Read, "50"),
-                    (Read, "41"),
-                    (Write, "50"),
-                    (Read, "rand"),
-                    (Read, "3"),
-                    (Write, "760714561"),
-                    (Write, "1359476136"),
-                    (Write, "1636897319"),
-                    (Read, "exit")
-                ),
-                new[] {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32}
-            ).SetName("my rand median rand"),
+            ).SetName("rand median rand"),
             new TestCaseData(
                 new TestConsole(
                     (Read, "rand"),
@@ -328,7 +286,7 @@ namespace CommandLineCalculator.Tests
                     (Read, "exit")
                 ),
                 new[] {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34}
-            ).SetName("my randx3 help add"),
+            ).SetName("rand 3x help add"),
             new TestCaseData(
                 new TestConsole(
                     (Read, "rand"),
@@ -342,7 +300,7 @@ namespace CommandLineCalculator.Tests
                     (Read, "exit")
                 ),
                 new[] {0, 2, 4, 6, 8, 10, 12, 14, 16}
-            ).SetName("only rand"),
+            ).SetName("many rand"),
             new TestCaseData(
                 new TestConsole(
                     (Read, "help"),
@@ -353,7 +311,7 @@ namespace CommandLineCalculator.Tests
                     (Read, "exit")
                 ),
                 new[] {0, 2, 4}
-            ).SetName("tupo help end"),
+            ).SetName("help end"),
             new TestCaseData(
                 new TestConsole(
                     (Read, "help"),
@@ -396,7 +354,7 @@ namespace CommandLineCalculator.Tests
                     (Read, "exit")
                 ),
                 new[] {0, 2, 4, 6, 8, 10, 12, 14, 16, 18,}
-            ).SetName("help azaza break"),
+            ).SetName("help unknown command"),
             new TestCaseData(
                 new TestConsole(
                     (Read, "help"),
@@ -419,7 +377,7 @@ namespace CommandLineCalculator.Tests
                     (Read, "exit")
                 ),
                 new[] {0, 2, 4, 6}
-            ).SetName("my median 0"),
+            ).SetName("zero median"),
             new TestCaseData(
                 new TestConsole(
                     (Read, "ramd"),
